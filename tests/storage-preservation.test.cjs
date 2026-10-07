@@ -37,7 +37,7 @@ function fixture() {
 function app(initial) {
   const memory = new Map([['wordly_app_v1',JSON.stringify(initial)]]);
   const context = vm.createContext({structuredClone,console,localStorage:{getItem:key=>memory.get(key)||null,setItem:(key,value)=>memory.set(key,value)},renderNav(){},toast(){},WANG807:arraySource('WANG807'),FIRST_DICTATION:arraySource('FIRST_DICTATION'),FIRST_LESSON_ID:'first-dictation-2026-10-06',FIRST_LESSON_TIME:1791244800000});
-  const names = ['uid','validCalendarDay','safeReviewNumber','normalizeReview','normalizeMemory','normalizeVocabPractice','normalizeListening','normalizeReading','normalizeSpeakingBank','normalizeDb','load','save','seed807','seedFirstDictation','migrateReview'];
+  const names = ['uid','validCalendarDay','safeReviewNumber','normalizeReview','normalizeMemory','normalizeVocabPractice','normalizeListening','normalizeReading','normalizeSpeakingBank','normalizeSpeakingMaterial','normalizeSpeakingMaterials','normalizeSpeakingMaterialDraft','normalizeDb','load','save','seed807','seedFirstDictation','migrateReview'];
   vm.runInContext(`const KEY='wordly_app_v1';const defaults={words:[],logs:[],mistakes:{},settings:{mode:'meaning',feedback:'instant',plays:2,interval:3,auto:false,voice:''}};${names.map(functionSource).join('\n')}let db=load();`,context);
   return {run:code=>vm.runInContext(code,context),saved:()=>JSON.parse(memory.get('wordly_app_v1'))};
 }
@@ -63,5 +63,15 @@ test('repeated built-in imports keep mastered words, personal examples and exist
   assert.deepEqual(first.words.find(w=>w.id==='existing-word'),original.words[0]);
   assert.deepEqual(first.words.find(w=>w.id==='personal-word'),original.words[1]);
   for(const field of ['logs','mistakes','review','memoryTyping','daily','reading'])assert.deepEqual(first[field],original[field],field);
+});
+test('personal speaking materials and unfinished drafts survive backup restoration and reload',()=>{
+  const original=fixture();
+  original.speaking.materials=[{id:'spm-course-note',part:2,title:'我的课程题补充',cue:'What did you learn?',keywords:'design, prototype',story:'暑期课程的具体经历',answer:'I learned to solve real problems.',corrections:'industry design → industrial design',next:'补充一个产品例子',tags:'课程，经历',status:'ready',sourceId:'course-impressed',created:1791330000000,updated:1791330100000}];
+  original.speaking.materialDraft={id:null,part:3,title:'还没写完的题',cue:'Why is education important?',keywords:'',story:'',answer:'Education helps',corrections:'',next:'',tags:'',status:'draft',sourceId:'',created:0,updated:1791330200000};
+  const site=app(original);
+  site.run('save();db=load();seed807();seedFirstDictation();migrateReview();save();');
+  assert.deepEqual(site.saved().speaking.materials,original.speaking.materials);
+  assert.deepEqual(site.saved().speaking.materialDraft,original.speaking.materialDraft);
+  for(const field of ['logs','mistakes','review','memoryTyping','daily','reading'])assert.deepEqual(site.saved()[field],original[field],field);
 });
 

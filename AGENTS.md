@@ -8,4 +8,6 @@
 - 新部署仍使用原网址。换域名、浏览器或设备不会自动同步本地数据；学习备份不包含录音，不能声称会自动迁移录音。
 - 发布前运行 `node --test tests/*.test.cjs` 和 `node scripts/build-github-pages.mjs`。涉及学习数据时，保留并扩展 `tests/storage-preservation.test.cjs`。
 - 修改听力外部资源文件后，运行 `node scripts/version-listening-assets.mjs` 更新缓存版本。
+- 口语整理与未完成稿保存在原学习数据库的 `speaking.materials` 与 `speaking.materialDraft`；旧备份缺少这些字段时使用空默认值，不改动其他学习记录。新增个人整理不得上传到公共仓库。
+- 修改口语整理模块或内置课程页后，运行 `node scripts/version-speaking-library.mjs`，让模块和内嵌课程页使用同一新缓存版本。
 - 仅在此仓库提交与推送，不要修改父目录中的其他 Git 项目。推送 main 自动发布到现有两处站点。
