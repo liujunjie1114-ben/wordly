@@ -18,7 +18,7 @@
     <section class="listen-player"><p class="listen-kicker" id="listenProvider">YOUR LISTENING SPACE</p><h2 class="listen-title" id="listenTitle">准备好听见新想法</h2><p class="listen-meta" id="listenMeta">选择 BBC 短节目，或 TED 演讲。</p>
     <div id="listenBBC" hidden><div class="listen-audio-cover"><span class="listen-audio-mark" aria-hidden="true">◖</span><div><b>6 Minute English</b><p>短一点，听懂多一点。先听一遍，再打开英文文稿。</p></div></div><audio id="listenAudio" controls preload="none" aria-label="BBC 播客播放器"></audio>
     <div class="listen-controls"><button class="btn" id="listenPlay">播放</button><label>语速 <select id="listenRate" aria-label="BBC 播放语速"><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option></select></label><label><input type="checkbox" id="listenNext">连续播放 BBC</label></div></div>
-    <div id="listenTED" hidden><div id="listenTEDSlot"></div><button class="btn" id="listenTEDStart" hidden>重新打开 TED 播放器</button><p class="listen-note">点击播放器的播放按钮开始。英文字幕由官方播放器提供；可在 CC 菜单中选择 English。</p></div>
+    <div id="listenTED" hidden><div id="listenTEDSlot"></div><button class="btn" id="listenTEDStart" hidden>重新打开 TED 播放器</button><p class="listen-note">点击播放器开始。若 TED 自动使用中文配音，请在下方 TED Fluent 中选择 English（ORIGINAL），或关闭配音开关。字幕菜单选择 English，可对照英文收听。</p></div>
     <p class="listen-status" id="listenStatus" role="status">正在载入节目列表。</p><div class="listen-actions"><button class="btn light" id="listenTranscriptToggle" aria-expanded="false">显示英文文稿</button><button class="btn light" id="listenStop">停止播放</button><button class="btn light" id="listenNight" aria-pressed="false">夜间显示</button></div>
     <details class="listen-sleep" open><summary>睡眠定时<span class="listen-countdown" id="listenCountdown">未设置</span></summary><div class="listen-presets"><button data-listen-minutes="15">15 分钟</button><button data-listen-minutes="30">30 分钟</button><button data-listen-minutes="60">60 分钟</button><button id="listenTimerCancel">取消定时</button></div>
     <div class="listen-custom"><label for="listenCustomMinutes">自定义</label><input type="number" id="listenCustomMinutes" min="0.1" max="240" step="0.1" value="20" aria-label="自定义停止分钟数"><span>分钟后停止</span><button class="btn light small" id="listenTimerSet">设置定时</button></div><p class="listen-note">倒计时从设置时开始，切换栏目也会保留。锁屏或浏览器休眠可能延迟停止；请保持网页打开。TED 停止后重新打开会从头载入。</p></details>
@@ -76,7 +76,7 @@
     tedFrame.title = 'TED 官方播放器：' + selected.title; tedFrame.src = tedEmbedURL(selected.source);
     tedFrame.allow = 'autoplay; fullscreen; picture-in-picture'; tedFrame.allowFullscreen = true;
     find('#listenTEDSlot').append(tedFrame); find('#listenTEDStart').hidden = true;
-    playback = 'ready'; status('TED 播放器已打开。点击播放器内的播放按钮，开始收听。'); updateDock();
+    playback = 'ready'; status('TED 播放器已打开。首次收听请确认音轨为 English（ORIGINAL）。'); updateDock();
   }
   function transcript() {
     const body = find('#listenTranscriptBody'); body.replaceChildren();

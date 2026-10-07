@@ -55,7 +55,7 @@ test('only the official HTTPS media and document hosts are accepted', () => {
   for (const url of ['javascript:alert(1)', 'https://evil.example/x.mp3', 'https://user:pass@downloads.bbc.co.uk/x.mp3', 'https://downloads.bbc.co.uk.evil.example/x.mp3']) assert.equal(safeSourceURL(url, 'audio'), null);
   assert.equal(safeSourceURL('https://downloads.bbc.co.uk/example.pdf', 'transcript'), 'https://downloads.bbc.co.uk/example.pdf');
 });
-test('TED uses its official player with English subtitles', () => {
+test('TED official player receives English audio and subtitle preferences', () => {
   assert.equal(tedEmbedURL('https://www.ted.com/talks/julian_treasure_how_to_speak_so_that_people_want_to_listen'), 'https://embed.ted.com/embed/julian_treasure_how_to_speak_so_that_people_want_to_listen?language=en&audio=en&subtitle=en');
   assert.equal(tedEmbedURL('https://evil.example/talks/x'), null);
 });
