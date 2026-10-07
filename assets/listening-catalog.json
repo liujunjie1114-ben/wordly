@@ -1,0 +1,126 @@
+{
+  "updatedAt": "2026-10-07T03:42:05.913Z",
+  "feedURL": "https://podcasts.files.bbci.co.uk/p02pc9tn.rss",
+  "episodes": [
+    {
+      "id": "p0pdc9cq",
+      "provider": "BBC",
+      "title": "Why does heartbreak hurt so much?",
+      "speaker": "6 Minute English",
+      "duration": 393,
+      "date": "2026-10-01",
+      "source": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2026/ep-261001",
+      "audio": "https://downloads.bbc.co.uk/learningenglish/features/6min/261001_6_minute_english_why_does_heartbreak_hurt_so_much_download.mp3",
+      "transcript": "https://downloads.bbc.co.uk/learningenglish/features/6min/261001_6_minute_english_why_does_heartbreak_hurt_so_much_transcript.pdf"
+    },
+    {
+      "id": "p0pc61lm",
+      "provider": "BBC",
+      "title": "Why do we itch?",
+      "speaker": "6 Minute English",
+      "duration": 382,
+      "date": "2026-09-24",
+      "source": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2026/ep-260924",
+      "audio": "https://downloads.bbc.co.uk/learningenglish/features/6min/260924_6_minute_english_why_do_we_itch_download.mp3",
+      "transcript": "https://downloads.bbc.co.uk/learningenglish/features/6min/260924_6_minute_english_why_do_we_itch_transcript.pdf"
+    },
+    {
+      "id": "p0pb0rd0",
+      "provider": "BBC",
+      "title": "Is rejection good for us?",
+      "speaker": "6 Minute English",
+      "duration": 381,
+      "date": "2026-09-17",
+      "source": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2026/ep-260917",
+      "audio": "https://downloads.bbc.co.uk/learningenglish/features/6min/260917_6_minute_english_is_rejection_good_for_us_download.mp3",
+      "transcript": "https://downloads.bbc.co.uk/learningenglish/features/6min/260917_6_minute_english_is_rejection_good_for_us_transcript.pdf"
+    },
+    {
+      "id": "p0p8w5sh",
+      "provider": "BBC",
+      "title": "Can apps teach you a language?",
+      "speaker": "6 Minute English",
+      "duration": 397,
+      "date": "2026-09-10",
+      "source": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2026/ep-260910",
+      "audio": "https://downloads.bbc.co.uk/learningenglish/features/6min/260910_6_minute_english_can_apps_teach_you_a_language_download.mp3",
+      "transcript": "https://downloads.bbc.co.uk/learningenglish/features/6min/260910_6_minute_english_can_apps_teach_you_a_language_transcript.pdf"
+    },
+    {
+      "id": "p0p7p9b8",
+      "provider": "BBC",
+      "title": "Climate change and extreme weather",
+      "speaker": "6 Minute English",
+      "duration": 396,
+      "date": "2026-09-03",
+      "source": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2026/ep-260903",
+      "audio": "https://downloads.bbc.co.uk/learningenglish/features/6min/260903_6_minute_english_storms_and_climate_change_download.mp3",
+      "transcript": "https://downloads.bbc.co.uk/learningenglish/features/6min/260903_6_minute_english_storms_and_climate_change_transcript.pdf"
+    },
+    {
+      "id": "p0p6j3xx",
+      "provider": "BBC",
+      "title": "How do we describe smells?",
+      "speaker": "6 Minute English",
+      "duration": 397,
+      "date": "2026-08-27",
+      "source": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2026/ep-260827",
+      "audio": "https://downloads.bbc.co.uk/learningenglish/features/6min/260827_6_minute_english_smells_download.mp3",
+      "transcript": null
+    },
+    {
+      "id": "p0p5h8tg",
+      "provider": "BBC",
+      "title": "Sharing the road with driverless cars",
+      "speaker": "6 Minute English",
+      "duration": 397,
+      "date": "2026-08-20",
+      "source": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2026/ep-260820",
+      "audio": "https://downloads.bbc.co.uk/learningenglish/features/6min/260820_6_minute_english_sharing_the_road_with_driverless_cars_download.mp3",
+      "transcript": "https://downloads.bbc.co.uk/learningenglish/features/6min/260820_6_minute_english_sharing_the_road_with_driverless_cars_transcript.pdf"
+    },
+    {
+      "id": "p0p478fw",
+      "provider": "BBC",
+      "title": "Who does the housework?",
+      "speaker": "6 Minute English",
+      "duration": 395,
+      "date": "2026-08-13",
+      "source": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2026/ep-260813",
+      "audio": "https://downloads.bbc.co.uk/learningenglish/features/6min/260813_6_minute_english_who_does_the_housework_download.mp3",
+      "transcript": "https://downloads.bbc.co.uk/learningenglish/features/6min/260813_6_minute_english_who_does_the_housework_transcript.pdf"
+    },
+    {
+      "id": "julian_treasure_how_to_speak_so_that_people_want_to_listen",
+      "provider": "TED",
+      "title": "How to speak so that people want to listen",
+      "speaker": "Julian Treasure",
+      "topic": "表达与沟通",
+      "source": "https://www.ted.com/talks/julian_treasure_how_to_speak_so_that_people_want_to_listen"
+    },
+    {
+      "id": "celeste_headlee_10_ways_to_have_a_better_conversation",
+      "provider": "TED",
+      "title": "10 ways to have a better conversation",
+      "speaker": "Celeste Headlee",
+      "topic": "对话与倾听",
+      "source": "https://www.ted.com/talks/celeste_headlee_10_ways_to_have_a_better_conversation"
+    },
+    {
+      "id": "matt_walker_sleep_is_your_superpower",
+      "provider": "TED",
+      "title": "Sleep is your superpower",
+      "speaker": "Matt Walker",
+      "topic": "睡眠与健康",
+      "source": "https://www.ted.com/talks/matt_walker_sleep_is_your_superpower"
+    },
+    {
+      "id": "tim_urban_inside_the_mind_of_a_master_procrastinator",
+      "provider": "TED",
+      "title": "Inside the mind of a master procrastinator",
+      "speaker": "Tim Urban",
+      "topic": "习惯与生活",
+      "source": "https://www.ted.com/talks/tim_urban_inside_the_mind_of_a_master_procrastinator"
+    }
+  ]
+}

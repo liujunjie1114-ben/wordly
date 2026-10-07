@@ -21,6 +21,10 @@ for (const name of references) {
 for (const [, script] of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
   if (script.trim()) new vm.Script(script);
 }
+for (const name of references.filter(name => name.endsWith('.js'))) {
+  new vm.Script(fs.readFileSync(path.join(root, 'assets', name), 'utf8'), {filename: name});
+}
+JSON.parse(fs.readFileSync(path.join(root, 'assets/listening-catalog.json'), 'utf8'));
 fs.mkdirSync(output, { recursive: true });
 fs.writeFileSync(path.join(output, 'index.html'), html);
 fs.mkdirSync(path.join(output, 'assets'), { recursive: true });

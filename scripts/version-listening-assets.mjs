@@ -1,0 +1,12 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import {fileURLToPath} from 'node:url';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const hash=crypto.createHash('sha256');
+for(const file of ['listening.css','listening-core.js','listening.js','listening-catalog.json']) hash.update(fs.readFileSync(path.join(root,'assets',file)));
+const version=hash.digest('hex').slice(0,12),index=path.join(root,'index.html');
+const original=fs.readFileSync(index,'utf8');
+const updated=original.replace(/\/assets\/(listening(?:-core)?\.js|listening\.css)(?:\?v=[a-f0-9]+)?/g,(_,name)=>'/assets/'+name+'?v='+version);
+if(updated!==original)fs.writeFileSync(index,updated);
+console.log(JSON.stringify({listeningAssetVersion:version}));
