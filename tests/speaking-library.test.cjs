@@ -17,9 +17,9 @@ test('all built-in materials point to complete local course pages',()=>{
 });
 test('search and Part filters work across built-in and personal practice',()=>{
   const entries=[...library.builtins,{id:'spm-one',part:3,title:'教育的价值',keywords:'learning',answer:'Education opens new possibilities.'}];
-  assert.equal(library.filterEntries(entries,{part:2,query:'industrial'}).length,1);
-  assert.equal(library.filterEntries(entries,{part:3,query:'EDUCATION'})[0].id,'spm-one');
-  assert.equal(library.filterEntries(entries,{part:1,query:''}).length,0);
+  assert.ok(library.filterEntries(entries,{part:2,query:'industrial'}).some(e=>e.id==='course-impressed'));
+  assert.ok(library.filterEntries(entries,{part:3,query:'EDUCATION'}).some(e=>e.id==='spm-one'));
+  assert.equal(library.filterEntries(entries,{part:1,query:''}).length,28);
 });
 test('editing one practice keeps its creation date and all other saved entries',()=>{
   const existing=[{id:'spm-one',title:'旧题',created:10,updated:20,answer:'旧答案'},{id:'spm-two',title:'另一题',created:12,answer:'不要覆盖'}];

@@ -32,3 +32,15 @@ node scripts/build-github-pages.mjs
 ```
 
 推送 main 后，原 GitHub Pages 和 Vercel 项目自动发布。用户通过表单新增私人整理不需要重新部署。
+# 全量口语资料（2026-10-07）
+
+已将用户提供的 28 页 PDF 完整接入：20 道 Part 2、28 个 Part 1 话题、12 组 Part 3 逻辑、6 个待补题和 4 份方法／来源资料。入口仍为主导航“口语整理”或 `#speaking-library`。
+
+- 按 Part、故事、整理状态和资料来源筛选；搜索覆盖答案、主动词汇、纠错及老师点评。
+- 点击“串题地图”查看 11 组故事；同一故事的 Part 2 整理可直接互相跳转。
+- 点击“阅读整理”查看完整内容；点击“补充本题”保存自己的回答。内置资料不会覆盖私人笔记。
+- A 稳定、A2 需复练、B 待核对；C、未确定个人经历的题及尚未稳定的记忆 Part 3 均保留待补状态。
+- 资料提纲不会扩写成未经确认的个人经历。旧课程 `course-impressed` 的 ID、旧页面和私人补充关系保留。
+- 原 PDF 保存在 `assets/speaking-storybank-2026-10-07.pdf`。`assets/speaking-storybank.json` 保存结构化内容和全部逐页原文；`.js` 提供搜索目录，各 `speaking-story-*.html` 提供阅读页。
+- `scripts/import-speaking-storybank.py` 为此次特定版本的可复现导入脚本（需要 pypdf、pdfplumber）。传入本次原 PDF 的绝对路径后生成资料；不接触 localStorage 或 IndexedDB。新版本资料应先核对页数和结构，再调整导入器。
+- 修改后依次运行 `node scripts/version-speaking-library.mjs`、`node --test tests/*.test.cjs`、`node scripts/build-github-pages.mjs`，提交并推送 main 发布到原站点。
