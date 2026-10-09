@@ -50,11 +50,12 @@ test('deployment continues using existing learning and recording storage identit
   assert.doesNotMatch(html,/localStorage\.clear\s*\(|indexedDB\.deleteDatabase\s*\(/);
 });
 test('compressed large words load, re-save and export as a readable complete backup',async()=>{
-  const original=fixture();original.words=Array.from({length:6500},(_,i)=>({id:'private-'+i,en:'word '+i,zh:'我的意思',created:i,appearances:11,correctCount:3,mastered:true,example:{en:'My edited English example to keep intact '+i,zh:'个人例句'}}));
+  const original=fixture();original.words=Array.from({length:6500},(_,i)=>({id:'private-'+i,en:'word '+i,zh:'我的意思',created:1791330000000+i,appearances:11,correctCount:3,mastered:true,dismissed:false,example:{en:'My edited English example to keep intact '+i,zh:'个人例句'}}));
   const core=require('../assets/study-core.js');original.knowledge=core.normalizeState(null);const stored=core.writeDb(original);assert.equal(stored.words.encoding,'lz-string-utf16-v1');
   const site=app(stored);site.run('save();db=load();downloadBackup(db);');
-  assert.deepEqual(JSON.parse(site.run('JSON.stringify(db.words)')),original.words);
-  const exported=JSON.parse(await site.downloads[0].text());assert.deepEqual(exported.words,original.words);assert.deepEqual(exported.logs,original.logs);assert.deepEqual(exported.mistakes,original.mistakes);
+  const digest=value=>require('node:crypto').createHash('sha256').update(JSON.stringify(value)).digest('hex');
+  assert.equal(digest(JSON.parse(site.run('JSON.stringify(db.words)'))),digest(original.words));
+  const exported=JSON.parse(await site.downloads[0].text());assert.equal(digest(exported.words),digest(original.words));assert.deepEqual(exported.logs,original.logs);assert.deepEqual(exported.mistakes,original.mistakes);
 });
 test('old learning records survive loading, saving and another load',()=>{
   const original=fixture(),site=app(original);
