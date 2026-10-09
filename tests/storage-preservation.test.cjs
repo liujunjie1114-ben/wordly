@@ -36,10 +36,13 @@ function fixture() {
 }
 function app(initial) {
   const memory = new Map([['wordly_app_v1',JSON.stringify(initial)]]);
-  const context = vm.createContext({structuredClone,console,localStorage:{getItem:key=>memory.get(key)||null,setItem:(key,value)=>memory.set(key,value)},renderNav(){},toast(){},WANG807:arraySource('WANG807'),FIRST_DICTATION:arraySource('FIRST_DICTATION'),FIRST_LESSON_ID:'first-dictation-2026-10-06',FIRST_LESSON_TIME:1791244800000});
-  const names = ['uid','validCalendarDay','safeReviewNumber','normalizeReview','normalizeMemory','normalizeVocabPractice','normalizeListening','normalizeReading','normalizeSpeakingBank','normalizeSpeakingMaterial','normalizeSpeakingMaterials','normalizeSpeakingMaterialDraft','normalizeDb','load','save','seed807','seedFirstDictation','migrateReview'];
-  vm.runInContext(`const KEY='wordly_app_v1';const defaults={words:[],logs:[],mistakes:{},settings:{mode:'meaning',feedback:'instant',plays:2,interval:3,auto:false,voice:''}};${names.map(functionSource).join('\n')}let db=load();`,context);
-  return {run:code=>vm.runInContext(code,context),saved:()=>JSON.parse(memory.get('wordly_app_v1'))};
+  const downloads=[];
+  const context = vm.createContext({structuredClone,console,Blob,URL:{createObjectURL(blob){downloads.push(blob);return 'blob:test';},revokeObjectURL(){}},setTimeout(){},document:{createElement(){return {click(){}};}},WordlyStudyCore:require('../assets/study-core.js'),localStorage:{getItem:key=>memory.get(key)||null,setItem:(key,value)=>memory.set(key,value)},renderNav(){},toast(){},WANG807:arraySource('WANG807'),FIRST_DICTATION:arraySource('FIRST_DICTATION'),FIRST_LESSON_ID:'first-dictation-2026-10-06',FIRST_LESSON_TIME:1791244800000});
+  const names = ['uid','validCalendarDay','safeReviewNumber','normalizeReview','normalizeMemory','normalizeVocabPractice','normalizeListening','normalizeReading','normalizeSpeakingBank','normalizeSpeakingMaterial','normalizeSpeakingMaterials','normalizeSpeakingMaterialDraft','normalizeStudy','normalizeDb','load','save','seed807','seedFirstDictation','migrateReview'];
+  if(html.includes('function saveStudyMaterials('))names.push('saveStudyMaterials');
+  for(const name of ['restoreLearningBackup','downloadRecoveryBackup','downloadBackup'])if(html.includes(`function ${name}(`))names.push(name);
+  vm.runInContext(`let storageReadFailed=false;const KEY='wordly_app_v1';const defaults={words:[],logs:[],mistakes:{},settings:{mode:'meaning',feedback:'instant',plays:2,interval:3,auto:false,voice:''}};${names.map(functionSource).join('\n')}let db=load();`,context);
+  return {run:code=>vm.runInContext(code,context),saved:()=>JSON.parse(memory.get('wordly_app_v1')),downloads};
 }
 test('deployment continues using existing learning and recording storage identities',()=>{
   assert.match(html,/const KEY='wordly_app_v1'/);
@@ -73,5 +76,81 @@ test('personal speaking materials and unfinished drafts survive backup restorati
   assert.deepEqual(site.saved().speaking.materials,original.speaking.materials);
   assert.deepEqual(site.saved().speaking.materialDraft,original.speaking.materialDraft);
   for(const field of ['logs','mistakes','review','memoryTyping','daily','reading'])assert.deepEqual(site.saved()[field],original[field],field);
+});
+
+test('study knowledge edits, sources and due dates survive backup restoration and seeding',()=>{
+  const core=require('../assets/study-core.js'),original=fixture();
+  original.knowledge=core.normalizeState({entries:[{id:'kp-existing',title:'我的知识点',categories:['reading'],summary:'自己的解释',example:'My own example.',sources:[{path:'local-note.md',locator:'第 2 节'}]}],review:{'kp-existing':{stage:3,due:1791800000000,last:1791300000000,reviews:7,lapses:2}},imports:[{id:'my-pack',title:'私人整理',date:1791300000000,added:1,merged:0}]});
+  const site=app(original);
+  site.run('save();db=load();seed807();seedFirstDictation();migrateReview();save();');
+  assert.deepEqual(site.saved().knowledge,original.knowledge);
+  for(const field of ['logs','mistakes','review','memoryTyping','daily','reading'])assert.deepEqual(site.saved()[field],original[field],field);
+});
+
+test('missing study fields in old backups gain empty defaults without changing other learning',()=>{
+  const original=fixture(),site=app(original);site.run('save()');
+  assert.deepEqual(site.saved().knowledge,{entries:[],review:{},imports:[]});
+  assert.deepEqual(site.saved().words,original.words);
+});
+
+test('a broken stored record is not overwritten by fallback initialization',()=>{
+  const site=app(fixture());site.run("localStorage.setItem(KEY,'{broken');db=load();seed807();seedFirstDictation();migrateReview();save();");
+  assert.equal(site.run('localStorage.getItem(KEY)'),'{broken');
+  assert.equal(site.run('storageReadFailed'),true);
+});
+
+test('study and wordbook imports save together without changing historical progress',()=>{
+  assert.ok(html.includes('function saveStudyMaterials('));
+  const original=fixture(),site=app(original);
+  const baseline=JSON.parse(site.run('JSON.stringify(db)'));
+  const pack={schema:'wordly-study-pack',version:1,batch:{id:'new-topics',title:'主题词汇'},entries:[{id:'new-engaging',title:'engaging',kind:'vocabulary',en:'engaging',zh:'吸引人的',categories:['speaking'],sources:[{path:'Movies.docx',locator:'段落 5'}]}]};
+  site.run(`const studyPack=${JSON.stringify(pack)};saveStudyMaterials(WordlyStudyCore.merge(db.knowledge,studyPack).state,studyPack);db=load();save();`);
+  const saved=site.saved();
+  assert.equal(saved.knowledge.entries.length,1);
+  assert.equal(saved.words.find(w=>w.en==='engaging').studySources[0].path,'Movies.docx');
+  for(const field of ['logs','mistakes','daily','review','memoryTyping','vocabPractice','reading','speaking'])assert.deepEqual(saved[field],baseline[field],field);
+  assert.deepEqual(saved.words.slice(0,2),original.words);
+  const before=site.run('JSON.stringify(db)');
+  site.run('storageReadFailed=true;saveStudyMaterials(WordlyStudyCore.normalizeState(null),studyPack);');
+  assert.equal(site.run('JSON.stringify(db)'),before);
+});
+
+test('application reloads compact private imports and refuses to overwrite damaged compressed data',()=>{
+  const core=require('../assets/study-core.js'),original=fixture();
+  original.knowledge={entries:[{id:'big-private',title:'大型私人资料',categories:['grammar'],explanation:'本机资料。'.repeat(2000),sources:[{path:'private.pdf',locator:'第 1 页'}]}],review:{},imports:[]};
+  original.words.push(...Array.from({length:600},(_,i)=>({id:'study-bulk-'+i,en:'private word '+i,zh:'个人词条',created:1,appearances:2,correctCount:1,mastered:false,dismissed:false,studySources:[{path:'private.pdf',locator:'第 1 页'}],example:{en:'Example '+i+' '.repeat(1800),zh:'个人例句'}})));
+  const site=app(original),baseline=JSON.parse(site.run('JSON.stringify(db)'));
+  site.run('save();db=load();');
+  assert.equal(site.saved().knowledge.encoding,'lz-string-utf16-v1');
+  assert.deepEqual(JSON.parse(site.run('JSON.stringify(db)')),baseline);
+  assert.deepEqual(core.readDb(site.saved()),baseline);
+  site.run("const damaged=JSON.parse(localStorage.getItem(KEY));damaged.knowledge.data='broken';localStorage.setItem(KEY,JSON.stringify(damaged));db=load();save();");
+  assert.equal(site.run('storageReadFailed'),true);
+  assert.equal(site.saved().knowledge.data,'broken');
+});
+
+test('explicit valid restore recovers a blocked store',()=>{
+  const original=fixture(),site=app(original);
+  site.run('storageReadFailed=true;db=normalizeDb(defaults);');
+  assert.equal(site.run(`restoreLearningBackup(${JSON.stringify(original)})`),true);
+  assert.equal(site.run('storageReadFailed'),false);
+  assert.deepEqual(site.saved().logs,original.logs);
+  assert.deepEqual(site.saved().mistakes,original.mistakes);
+});
+
+test('quota failure rolls restore back',()=>{
+  const original=fixture(),site=app(original),before=site.run('JSON.stringify(db)');
+  site.run('storageReadFailed=true;localStorage.setItem=()=>{throw Error("QuotaExceededError")};');
+  assert.equal(site.run(`restoreLearningBackup(${JSON.stringify({...original,logs:[]})})`),false);
+  assert.equal(site.run('JSON.stringify(db)'),before);
+  assert.equal(site.run('storageReadFailed'),true);
+  assert.deepEqual(site.saved(),original);
+});
+
+test('recovery export retains malformed original bytes',async()=>{
+  const site=app(fixture());
+  site.run("localStorage.setItem(KEY,'{broken original');db=load();downloadRecoveryBackup();");
+  assert.equal(await site.downloads[0].text(),'{broken original');
+  assert.equal(site.run('localStorage.getItem(KEY)'),'{broken original');
 });
 
