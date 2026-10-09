@@ -1,4 +1,4 @@
-(function(root,factory){const common=typeof module==='object'&&module.exports,api=factory(common?require('./study-core.js'):root.WordlyStudyCore);if(common)module.exports=api;else root.WordlyStudyLibrary=api;})(typeof globalThis!=='undefined'?globalThis:this,function(core){
+(function(root,factory){const common=typeof module==='object'&&module.exports,api=factory(root.WordlyStudyCore||(common&&typeof require==='function'?require('./study-core.js'):null));if(common)module.exports=api;else root.WordlyStudyLibrary=api;})(typeof globalThis!=='undefined'?globalThis:this,function(core){
   'use strict';
   const script=typeof document!=='undefined'?document.currentScript:null;
   const local=typeof location!=='undefined'&&['localhost','127.0.0.1','[::1]'].includes(location.hostname);
