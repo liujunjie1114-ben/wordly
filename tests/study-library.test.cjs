@@ -14,7 +14,15 @@ test('Chinese editorial label is not spoken as English',()=>{
   const mixed=pack([entry('house',{kind:'vocabulary',en:'house',zh:'住宅',example:'My house is big. 我的房子很大。'})]);
   assert.equal(core.mergeWords([],mixed,1).words[0].example,undefined);
 });
-
+test('large word cores also fit safely while readable backups retain every personal field',()=>{
+  const words=Array.from({length:11000},(_,i)=>({id:'word-'+i,en:'expression '+i,zh:'词义 '+i,created:i,appearances:9,correctCount:3,mastered:true,example:{en:'My personally edited example '+i,zh:'自己的中文 '+i}}));
+  const db={words,logs:[{id:'first',entered:'old wrong answer'}],knowledge:core.normalizeState(null),studyPlan:null};
+  const stored=core.writeDb(db);
+  assert.equal(stored.words.encoding,'lz-string-utf16-v1');assert.ok(JSON.stringify(stored).length<JSON.stringify(db).length/2);
+  assert.deepEqual(core.readDb(JSON.parse(JSON.stringify(stored))),db);
+  const broken=structuredClone(stored);broken.words.checksum='bad';assert.throws(()=>core.readDb(broken),/校验/);
+  assert.deepEqual(core.readDb({words:[{id:'old',en:'bank'}]}),{words:[{id:'old',en:'bank'}]});
+});
 test('explicit library actions open the requested subject or card and reject missing targets',()=>{
   const library=require('../assets/study-library.js');
   assert.equal(typeof library.open,'function');

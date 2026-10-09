@@ -15,12 +15,14 @@
     if(JSON.stringify(value).length<1000000)return value;
     if(!lz)throw Error('资料存储模块尚未加载，请保留当前页面并导出备份。');
     const metadata=[],words=value.words.map((word,index)=>{const next={...word},extra={};for(const k of [...wordMeta,...(String(word.id).startsWith('study-')?['example']:[])])if(Object.hasOwn(next,k)){extra[k]=next[k];delete next[k];}if(Object.keys(extra).length)metadata.push([index,word.id,extra]);return next;});
-    return {...value,words,knowledge:compact(value.knowledge),studyWordData:compact(metadata)};
+    return {...value,words:JSON.stringify(words).length>=1000000?compact(words):words,knowledge:compact(value.knowledge),studyWordData:compact(metadata)};
   }
   function readDb(value){
     if(!value||typeof value!=='object')return value;
-    if(!value.studyWordData&&value.knowledge?.encoding!=='lz-string-utf16-v1')return value;
-    const next={...value,knowledge:expand(value.knowledge),words:Array.isArray(value.words)?value.words.map(w=>({...w})):value.words};
+    if(!value.studyWordData&&value.knowledge?.encoding!=='lz-string-utf16-v1'&&value.words?.encoding!=='lz-string-utf16-v1')return value;
+    const decodedWords=expand(value.words);
+    if(value.words?.encoding==='lz-string-utf16-v1'&&!Array.isArray(decodedWords))throw Error('压缩词库格式异常，请保留原备份。');
+    const next={...value,knowledge:expand(value.knowledge),words:Array.isArray(decodedWords)?decodedWords.map(w=>({...w})):decodedWords};
     if(value.studyWordData){const rows=expand(value.studyWordData);if(!Array.isArray(rows)||!Array.isArray(next.words)||rows.length>50000)throw Error('词汇附加资料格式错误。');for(const row of rows){if(!Array.isArray(row)||row.length!==3||!Number.isInteger(row[0])||next.words[row[0]]?.id!==row[1]||!row[2]||typeof row[2]!=='object'||Object.keys(row[2]).some(k=>![...wordMeta,'example'].includes(k)))throw Error('词汇附加资料与原词库不一致。');Object.assign(next.words[row[0]],row[2]);}delete next.studyWordData;}
     return next;
   }
