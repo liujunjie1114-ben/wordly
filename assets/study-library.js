@@ -1,4 +1,4 @@
-(function(root,factory){const api=factory(root.WordlyStudyCore);if(typeof module==='object'&&module.exports)module.exports=api;else root.WordlyStudyLibrary=api;})(typeof globalThis!=='undefined'?globalThis:this,function(core){
+(function(root,factory){const common=typeof module==='object'&&module.exports,api=factory(common?require('./study-core.js'):root.WordlyStudyCore);if(common)module.exports=api;else root.WordlyStudyLibrary=api;})(typeof globalThis!=='undefined'?globalThis:this,function(core){
   'use strict';
   const script=typeof document!=='undefined'?document.currentScript:null;
   const local=typeof location!=='undefined'&&['localhost','127.0.0.1','[::1]'].includes(location.hostname);
@@ -11,6 +11,7 @@
   const date=n=>n?new Intl.DateTimeFormat('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Shanghai'}).format(new Date(n)):'';
   const fileName=path=>String(path).split(/[\\/]/).pop();
   function configure(value){config=value;}
+  function open({subject:nextSubject='',kind:nextKind='',entryId=null,reviewIds=null}={}){if(!beforeNavigate())return false;if(nextSubject&&!Object.hasOwn(core.subjects,nextSubject))throw Error('科目不存在');if(nextKind&&!['knowledge','vocabulary'].includes(nextKind))throw Error('资料类型不存在');const all=state().entries;if(entryId&&!all.some(e=>e.id===entryId))throw Error('知识点不存在或未导入');subject=nextSubject;kind=nextKind;status=query=error='';pending=null;limit=12;selected=entryId;mode=entryId?'detail':'list';if(Array.isArray(reviewIds)){queue=[...new Set(reviewIds)].filter(id=>all.some(e=>e.id===id&&e.status==='ready'));cursor=0;revealed=false;mode='review';}if(container)draw();return true;}
   function mount(node){container=node;draw();if(local&&!sampleLoaded&&new URLSearchParams(location.search).get('studySample')==='1'){sampleLoaded=true;sample();}}
   function beforeRender(){container=null;}
   function beforeNavigate(){if(dirty){config.notify('请先保存修改，或点击取消编辑。');return false;}return true;}
@@ -45,5 +46,5 @@
     if(form){form.oninput=()=>dirty=true;form.onsubmit=e=>{e.preventDefault();try{const prior=entries().find(x=>x.id===selected),next=core.entry({...prior,...Object.fromEntries(new FormData(form)),updated:Date.now()});if(pending){pending.entries=pending.entries.map(x=>x.id===next.id?next:x);}else{const data=state();if(!config.setState({...data,entries:data.entries.map(x=>x.id===next.id?next:x)}))return;}dirty=false;mode='detail';draw();config.notify(pending?'已修改预览，导入后保存。':'知识点已保存。');}catch(err){error=err.message;config.notify(error);}};}
   }
   if(typeof window!=='undefined')window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
-  return {configure,mount,beforeRender,beforeNavigate};
+  return {configure,mount,beforeRender,beforeNavigate,open};
 });

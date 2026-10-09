@@ -15,6 +15,21 @@ test('Chinese editorial label is not spoken as English',()=>{
   assert.equal(core.mergeWords([],mixed,1).words[0].example,undefined);
 });
 
+test('explicit library actions open the requested subject or card and reject missing targets',()=>{
+  const library=require('../assets/study-library.js');
+  assert.equal(typeof library.open,'function');
+  const state=core.normalizeState({entries:[entry('specific',{title:'指定阅读证据'}),entry('unchecked',{title:'尚待核对',status:'needs-check'})]});
+  library.configure({getState:()=>state,setState:()=>true,notify(){}});
+  const node={innerHTML:'',querySelectorAll:()=>[],querySelector:()=>null};
+  library.open({subject:'reading',entryId:'specific'});library.mount(node);
+  assert.match(node.innerHTML,/指定阅读证据/);assert.match(node.innerHTML,/原解释/);
+  assert.throws(()=>library.open({entryId:'absent'}),/不存在/);
+  assert.throws(()=>library.open({subject:'constructor'}),/科目/);
+  library.open({reviewIds:['unchecked']});library.mount(node);
+  assert.match(node.innerHTML,/复习/);assert.doesNotMatch(node.innerHTML,/data-study-grade/);
+  assert.deepEqual(state.review,{});
+});
+
 test('preview validation rejects backup files, malformed items and repeated IDs',()=>{
   assert.throws(()=>core.readPack({words:[],logs:[]}));
   assert.throws(()=>core.readPack(pack([])));

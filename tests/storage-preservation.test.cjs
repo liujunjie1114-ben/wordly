@@ -37,10 +37,10 @@ function fixture() {
 function app(initial) {
   const memory = new Map([['wordly_app_v1',JSON.stringify(initial)]]);
   const downloads=[];
-  const context = vm.createContext({structuredClone,console,Blob,URL:{createObjectURL(blob){downloads.push(blob);return 'blob:test';},revokeObjectURL(){}},setTimeout(){},document:{createElement(){return {click(){}};}},WordlyStudyCore:require('../assets/study-core.js'),localStorage:{getItem:key=>memory.get(key)||null,setItem:(key,value)=>memory.set(key,value)},renderNav(){},toast(){},WANG807:arraySource('WANG807'),FIRST_DICTATION:arraySource('FIRST_DICTATION'),FIRST_LESSON_ID:'first-dictation-2026-10-06',FIRST_LESSON_TIME:1791244800000});
+  const context = vm.createContext({structuredClone,console,Blob,URL:{createObjectURL(blob){downloads.push(blob);return 'blob:test';},revokeObjectURL(){}},setTimeout(){},document:{createElement(){return {click(){}};}},WordlyStudyCore:require('../assets/study-core.js'),WordlyMonthPlan:require('../assets/month-plan-core.js'),localStorage:{getItem:key=>memory.get(key)||null,setItem:(key,value)=>memory.set(key,value)},renderNav(){},toast(){},WANG807:arraySource('WANG807'),FIRST_DICTATION:arraySource('FIRST_DICTATION'),FIRST_LESSON_ID:'first-dictation-2026-10-06',FIRST_LESSON_TIME:1791244800000});
   const names = ['uid','validCalendarDay','safeReviewNumber','normalizeReview','normalizeMemory','normalizeVocabPractice','normalizeListening','normalizeReading','normalizeSpeakingBank','normalizeSpeakingMaterial','normalizeSpeakingMaterials','normalizeSpeakingMaterialDraft','normalizeStudy','normalizeDb','load','save','seed807','seedFirstDictation','migrateReview'];
   if(html.includes('function saveStudyMaterials('))names.push('saveStudyMaterials');
-  for(const name of ['restoreLearningBackup','downloadRecoveryBackup','downloadBackup'])if(html.includes(`function ${name}(`))names.push(name);
+  for(const name of ['restoreLearningBackup','downloadRecoveryBackup','downloadBackup','saveStudyPlan'])if(html.includes(`function ${name}(`))names.push(name);
   vm.runInContext(`let storageReadFailed=false;const KEY='wordly_app_v1';const defaults={words:[],logs:[],mistakes:{},settings:{mode:'meaning',feedback:'instant',plays:2,interval:3,auto:false,voice:''}};${names.map(functionSource).join('\n')}let db=load();`,context);
   return {run:code=>vm.runInContext(code,context),saved:()=>JSON.parse(memory.get('wordly_app_v1')),downloads};
 }
@@ -152,5 +152,28 @@ test('recovery export retains malformed original bytes',async()=>{
   site.run("localStorage.setItem(KEY,'{broken original');db=load();downloadRecoveryBackup();");
   assert.equal(await site.downloads[0].text(),'{broken original');
   assert.equal(site.run('localStorage.getItem(KEY)'),'{broken original');
+});
+
+test('old backups gain an empty month plan without changing history',()=>{
+  const original=fixture(),site=app(original);
+  assert.equal(site.run('db.studyPlan'),null);
+  site.run('save();');
+  for(const field of ['words','logs','mistakes','daily','review','reading'])assert.deepEqual(site.saved()[field],original[field]);
+});
+
+test('month plan completion survives reload and joint import failure rolls all three states back',()=>{
+  const site=app(fixture());
+  site.run("const lesson={id:'lesson',title:'阅读知识',categories:['reading'],kind:'knowledge',status:'ready',sources:[{path:'lesson.pdf',locator:'第1页'}]};db.knowledge=WordlyStudyCore.normalizeState({entries:[lesson]});let plan=WordlyMonthPlan.create({entries:[lesson],startDay:'2026-10-09',now:1});plan=WordlyMonthPlan.setTask(plan,plan.days[0].tasks.find(t=>t.subject==='reading').id,{selfReported:true,notes:'原文证据'});saveStudyPlan(plan);db=load();");
+  assert.equal(site.saved().studyPlan.days[0].tasks.find(t=>t.subject==='reading').selfReported,true);
+  const before=site.run('JSON.stringify(db)');
+  site.run("localStorage.setItem=()=>{throw Error('quota')};const incoming={schema:'wordly-study-pack',version:1,batch:{id:'extra',title:'新增'},entries:[{id:'extra',title:'extra',kind:'vocabulary',en:'extra',zh:'额外的',categories:['reading'],sources:[{path:'extra.pdf',locator:'第1页'}]}]};saveStudyMaterials(WordlyStudyCore.merge(db.knowledge,incoming).state,incoming);");
+  assert.equal(site.run('JSON.stringify(db)'),before);
+});
+
+test('nonexistent evidence cannot count as completed practice',()=>{
+  const site=app(fixture());
+  site.run("const plan=WordlyMonthPlan.create({entries:[{id:'lesson',title:'知识',kind:'knowledge',status:'ready',categories:['reading']}],startDay:'2026-10-09',now:1});plan.days[0].tasks[0].evidence=[{type:'dictation-log',id:'fake-log'}];");
+  assert.equal(site.run('saveStudyPlan(plan)'),false);
+  assert.equal(site.run('db.studyPlan'),null);
 });
 
