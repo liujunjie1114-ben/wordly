@@ -50,6 +50,13 @@ test('deployment continues using existing learning and recording storage identit
   assert.doesNotMatch(html,/localStorage\.clear\s*\(|indexedDB\.deleteDatabase\s*\(/);
 });
 
+test('fast dictation pace survives reload without altering any learning records',()=>{
+  const initial=fixture();initial.settings.plays=1;initial.settings.interval=0;
+  const site=app(initial);site.run('save();db=load();');
+  assert.equal(site.saved().settings.plays,1);assert.equal(site.saved().settings.interval,0);
+  for(const key of ['words','logs','mistakes','review','memoryTyping','daily','reading'])assert.deepEqual(site.saved()[key],initial[key],key);
+});
+
 test('topic evidence checks survive save, reload and backup with the old records intact',async()=>{
   const original=fixture();
   original.speaking.coachReview={'P2-MEDICAL-UNCLE--future':{checks:[true,false,true,false,true,false,true,false],proof:'这是未来职业意愿，不能写成已经是医生。',logic:'claim',updated:1791700000000}};

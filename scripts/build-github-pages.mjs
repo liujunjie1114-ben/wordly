@@ -27,6 +27,9 @@ for (const name of references.filter(name => name.endsWith('.js'))) {
 JSON.parse(fs.readFileSync(path.join(root, 'assets/listening-catalog.json'), 'utf8'));
 fs.mkdirSync(output, { recursive: true });
 fs.writeFileSync(path.join(output, 'index.html'), html);
+const audioWorker=fs.readFileSync(path.join(root,'audio-worker.js'),'utf8');
+new vm.Script(audioWorker,{filename:'audio-worker.js'});
+fs.writeFileSync(path.join(output,'audio-worker.js'),audioWorker);
 fs.mkdirSync(path.join(output, 'assets'), { recursive: true });
 for (const entry of fs.readdirSync(path.join(root, 'assets'), { withFileTypes: true })) {
   if (!entry.isFile()) throw new Error(`Unexpected asset directory: ${entry.name}`);

@@ -14,3 +14,4 @@
 - 课堂诊断叠加在原口语资料上，不重写 2026-10-07 PDF 快照、稳定题目 ID 或用户私人版本。推荐例子不得写成未经确认的个人经历。
 - 题干与证据自查保存在 `speaking.coachReview`，按题目及版本分别记录；计时草稿和复盘的八项新自查使用 `coachChecks`，不占用原来的六项 `checks`。旧备份默认空状态，恢复、更新均保留已有记录。
 - 修改课堂意见原文后运行 `node scripts/build-speaking-coach.mjs`，再执行口语缓存版本、测试和静态构建。
+- 单词音频预载和缓存位于 `assets/word-audio.js` 与 `audio-worker.js`；缓存仅限散列命名的 MP3，不得扩展为缓存 HTML、用户学习数据或录音。修改音频模块后更新 index 中的模块缓存版本，GitHub Pages 必须保留根目录 worker。
