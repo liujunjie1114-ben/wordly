@@ -37,7 +37,7 @@ function fixture() {
 function app(initial) {
   const memory = new Map([['wordly_app_v1',JSON.stringify(initial)]]);
   const downloads=[];
-  const context = vm.createContext({structuredClone,console,Blob,URL:{createObjectURL(blob){downloads.push(blob);return 'blob:test';},revokeObjectURL(){}},setTimeout(){},document:{createElement(){return {click(){}};}},WordlyStudyCore:require('../assets/study-core.js'),WordlyMonthPlan:require('../assets/month-plan-core.js'),localStorage:{getItem:key=>memory.get(key)||null,setItem:(key,value)=>memory.set(key,value)},renderNav(){},toast(){},WANG807:arraySource('WANG807'),FIRST_DICTATION:arraySource('FIRST_DICTATION'),FIRST_LESSON_ID:'first-dictation-2026-10-06',FIRST_LESSON_TIME:1791244800000});
+  const context = vm.createContext({structuredClone,console,Blob,URL:{createObjectURL(blob){downloads.push(blob);return 'blob:test';},revokeObjectURL(){}},setTimeout(){},document:{createElement(){return {click(){}};}},WordlySpeakingCoach:require('../assets/speaking-coach.js'),WordlyStudyCore:require('../assets/study-core.js'),WordlyMonthPlan:require('../assets/month-plan-core.js'),localStorage:{getItem:key=>memory.get(key)||null,setItem:(key,value)=>memory.set(key,value)},renderNav(){},toast(){},WANG807:arraySource('WANG807'),FIRST_DICTATION:arraySource('FIRST_DICTATION'),FIRST_LESSON_ID:'first-dictation-2026-10-06',FIRST_LESSON_TIME:1791244800000});
   const names = ['uid','validCalendarDay','safeReviewNumber','normalizeReview','normalizeMemory','normalizeVocabPractice','normalizeListening','normalizeReading','normalizeSpeakingBank','normalizeSpeakingMaterial','normalizeSpeakingMaterials','normalizeSpeakingMaterialDraft','normalizeStudy','normalizeDb','load','save','seed807','seedFirstDictation','migrateReview'];
   if(html.includes('function saveStudyMaterials('))names.push('saveStudyMaterials');
   for(const name of ['restoreLearningBackup','downloadRecoveryBackup','downloadBackup','saveStudyPlan'])if(html.includes(`function ${name}(`))names.push(name);
@@ -48,6 +48,20 @@ test('deployment continues using existing learning and recording storage identit
   assert.match(html,/const KEY='wordly_app_v1'/);
   assert.match(html,/indexedDB\.open\('wordly_audio_v1',1\)/);
   assert.doesNotMatch(html,/localStorage\.clear\s*\(|indexedDB\.deleteDatabase\s*\(/);
+});
+
+test('topic evidence checks survive save, reload and backup with the old records intact',async()=>{
+  const original=fixture();
+  original.speaking.coachReview={'P2-MEDICAL-UNCLE--future':{checks:[true,false,true,false,true,false,true,false],proof:'这是未来职业意愿，不能写成已经是医生。',logic:'claim',updated:1791700000000}};
+  original.speaking.drafts.cue.coachChecks=[true,false,true,false,true,false,true,true];
+  original.speaking.logs[0].coachChecks=[true,true,false,false,true,true,false,true];
+  const site=app(original);site.run('save();db=load();downloadBackup(db);');
+  const exported=JSON.parse(await site.downloads[0].text());
+  assert.deepEqual(exported.speaking.coachReview,original.speaking.coachReview);
+  assert.deepEqual(exported.speaking.drafts,original.speaking.drafts);
+  assert.deepEqual(exported.speaking.logs,original.speaking.logs);
+  for(const field of ['words','logs','mistakes','daily','review','memoryTyping','reading'])assert.deepEqual(exported[field],original[field],field);
+  const empty=app(fixture());assert.deepEqual(JSON.parse(empty.run('JSON.stringify(db.speaking.coachReview)')),{});
 });
 test('compressed large words load, re-save and export as a readable complete backup',async()=>{
   const original=fixture();original.words=Array.from({length:6500},(_,i)=>({id:'private-'+i,en:'word '+i,zh:'我的意思',created:1791330000000+i,appearances:11,correctCount:3,mastered:true,dismissed:false,example:{en:'My edited English example to keep intact '+i,zh:'个人例句'}}));

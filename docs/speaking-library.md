@@ -44,3 +44,16 @@ node scripts/build-github-pages.mjs
 - 原 PDF 保存在 `assets/speaking-storybank-2026-10-07.pdf`。`assets/speaking-storybank.json` 保存结构化内容和全部逐页原文；`.js` 提供搜索目录，各 `speaking-story-*.html` 提供阅读页。
 - `scripts/import-speaking-storybank.py` 为此次特定版本的可复现导入脚本（需要 pypdf、pdfplumber）。传入本次原 PDF 的绝对路径后生成资料；不接触 localStorage 或 IndexedDB。新版本资料应先核对页数和结构，再调整导入器。
 - 修改后依次运行 `node scripts/version-speaking-library.mjs`、`node --test tests/*.test.cjs`、`node scripts/build-github-pages.mjs`，提交并推送 main 发布到原站点。
+# 2026-10-11 课堂改进
+
+口语整理库顶部显示核心题数量、可保留、需调整、关键风险和本节未评审；数字来自老师对素材的诊断，不代表考试分数。点击数字可筛选，今日优先题按关键风险排列。
+
+每道 Part 2 先看本题版本、Keyword Focus、Storyline / Claim–Evidence、真实素材、证据、专业词和提纲，再做四项论证检查和八项自查。医疗、采访、游泳、餐厅人物及购买题支持按不同题干切换中心与证据。历史答案折叠保留，旧资料和原 PDF 均未重写。
+
+- “我的细节怎样证明本题”和自查按题目、版本分别自动保存，位于原数据库 `speaking.coachReview`，随学习 JSON 备份恢复。
+- “填写我的对应版本”仍使用原私人整理与草稿；“按本题计时练习”打开稳定 ID 的课堂练习题，保留原自定义题卡。四个提示为本站课堂训练提示，并非官方题卡原文。
+- 结束讲述后自动显示八项新自查，使用独立 `coachChecks` 保存，不改变原六项回听检查、录音、词汇及其他进度。
+- 课堂建议里的商城、免费活动、第二家分店、特殊杯子等均标记待确认或老师示例；不会自动写进私人经历。新旧 Zhang 称谓冲突保持待核对。
+- Part 3 五种题型是下一课预告，本次未生成或冒充老师尚未提供的范文。
+
+主要文件：`assets/speaking-coach-data.js` 保存课堂诊断及变体；`assets/speaking-coach.js` 提供证据面板、自查及练习提示；`assets/speaking-teacher-2026-10-11.md` 完整保留课堂记录；`scripts/build-speaking-coach.mjs` 生成原文阅读页。入口、持久化桥接和计时复盘接在原 `index.html` 与 `assets/speaking-library.js` 中。

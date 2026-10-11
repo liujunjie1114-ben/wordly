@@ -11,3 +11,6 @@
 - 口语整理与未完成稿保存在原学习数据库的 `speaking.materials` 与 `speaking.materialDraft`；旧备份缺少这些字段时使用空默认值，不改动其他学习记录。新增个人整理不得上传到公共仓库。
 - 修改口语整理模块或内置课程页后，运行 `node scripts/version-speaking-library.mjs`，让模块和内嵌课程页使用同一新缓存版本。
 - 仅在此仓库提交与推送，不要修改父目录中的其他 Git 项目。推送 main 自动发布到现有两处站点。
+- 课堂诊断叠加在原口语资料上，不重写 2026-10-07 PDF 快照、稳定题目 ID 或用户私人版本。推荐例子不得写成未经确认的个人经历。
+- 题干与证据自查保存在 `speaking.coachReview`，按题目及版本分别记录；计时草稿和复盘的八项新自查使用 `coachChecks`，不占用原来的六项 `checks`。旧备份默认空状态，恢复、更新均保留已有记录。
+- 修改课堂意见原文后运行 `node scripts/build-speaking-coach.mjs`，再执行口语缓存版本、测试和静态构建。

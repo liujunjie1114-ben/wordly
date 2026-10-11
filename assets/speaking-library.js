@@ -9,8 +9,13 @@
     tags:'课程，设计，经历',related:'课程 · 重要决定 · 敬佩的人 · 成功人士 · 有用技能 · 改变想法的经历',status:'ready'
   }];
   const storybank=typeof module==='object'&&module.exports?require('./speaking-storybank.js'):(globalThis.WordlySpeakingStorybank||[]);
+  const coach=typeof module==='object'&&module.exports?require('./speaking-coach.js'):globalThis.WordlySpeakingCoach;
+  const variantChoices={};
+  let coachTimer=null;
   const originalCourse=builtins[0];
   if(storybank.length)builtins.splice(0,1,...storybank.map(e=>e.id===originalCourse.id?{...originalCourse,...e,cue:originalCourse.cue}:e));
+  for(let i=0;i<builtins.length;i++)builtins[i]=coach.decorate(builtins[i]);
+  builtins.push(coach.reference);
   const fields=[
     ['title','题目名称',200,'例如：一门让我印象深刻的课程','input'],
     ['cue','题卡／问题',4000,'写下英文题卡或这次练习的问题。'],
@@ -22,7 +27,7 @@
     ['tags','主题标签',300,'例如：课程，经历，设计','input']
   ];
   const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  function filterEntries(entries,{part=0,query='',cluster='',status='',source=''}={}){const q=query.trim().toLowerCase();return entries.filter(e=>(!+part||(+part===4?e.kind==='reference':e.part===+part))&&(!source||(source==='builtin'?e.builtin===true:e.builtin===false))&&(!cluster||e.cluster===cluster)&&(!status||(status==='pending'?(e.needsPersonalDetails||e.status==='draft'):!e.needsPersonalDetails&&e.status!=='draft'))&&(!q||[e.title,e.titleEn,e.cue,e.keywords,e.tags,e.story,e.answer,e.corrections,e.activeVocabulary,e.searchText,e.clusterLabel,e.related].some(v=>String(v||'').toLowerCase().includes(q))));}
+  function filterEntries(entries,{part=0,query='',cluster='',status='',source=''}={}){const q=query.trim().toLowerCase();return entries.filter(e=>(!+part||(+part===4?e.kind==='reference':e.part===+part))&&(!source||(source==='builtin'?e.builtin===true:e.builtin===false))&&(!cluster||e.cluster===cluster)&&(!status||(status.startsWith('coach-')?coach.profileFor(e).severity===status.slice(6):(status==='pending'?(e.needsPersonalDetails||e.status==='draft'):!e.needsPersonalDetails&&e.status!=='draft')))&&(!q||[e.title,e.titleEn,e.cue,e.keywords,e.tags,e.story,e.answer,e.corrections,e.activeVocabulary,e.searchText,e.clusterLabel,e.related].some(v=>String(v||'').toLowerCase().includes(q))));}
   function upsertEntry(entries,entry){if(!entry?.id||!String(entry.title||'').trim())throw Error('请填写题目名称。');const old=entries.find(e=>e.id===entry.id);const next={...old,...entry,created:old?.created||entry.created};return old?entries.map(e=>e.id===entry.id?next:e):[next,...entries];}
   let config=null,container=null,mode='list',selected=null,part=0,query='',cluster='',statusFilter='',sourceFilter='',limit=12,draftTimer=null,editing=null;
   const script=typeof document!=='undefined'?document.currentScript:null;
@@ -35,7 +40,7 @@
   const body=text=>`<div class="material-body">${escape(text)}</div>`;
   function configure(value){config=value;}
   function mount(node){container=node;if(mode==='form'&&state().draft)editing=state().draft;draw();}
-  function beforeRender(){if(container)flushDraft();container=null;}
+  function beforeRender(){if(container)flushAll();container=null;}
   function collect(){
     const form=container?.querySelector('#materialForm');if(!form)return null;
     const data={...editing};
@@ -53,27 +58,39 @@
     if(status)status.textContent=ok?(next?'草稿已自动保存':'填写后自动保存草稿'):'草稿保存失败，请先复制内容或导出备份。';
     return ok;
   }
+  function flushCoach(){
+    clearTimeout(coachTimer);coachTimer=null;
+    const node=container?.querySelector('[data-coach-key]');if(!node)return true;
+    const key=node.dataset.coachKey;
+    const next={checks:[...node.querySelectorAll('[data-coach-check]')].map(e=>e.checked),proof:node.querySelector('#coachProof').value,logic:node.querySelector('#coachLogic').value,updated:Date.now()};
+    const ok=config.setReview(key,next),status=node.querySelector('#coachSaveStatus');
+    if(status)status.textContent=ok?'自查已保存；题目版本分别记录，更新网站不会清空。':'自查保存失败，请复制内容或导出备份后再离开。';
+    return ok;
+  }
+  function flushAll(){return flushDraft()&&flushCoach();}
   function formFor(value={}){editing={id:null,part:2,title:'',cue:'',keywords:'',story:'',answer:'',corrections:'',next:'',tags:'',status:'draft',sourceId:'',created:0,updated:0,...value};mode='form';draw();container.querySelector('[name="title"]')?.focus();}
   function card(entry){
     const tags=(entry.tags||'').split(/[,，、\n]/).map(s=>s.trim()).filter(Boolean).slice(0,4);
     const summary=entry.description||entry.story||entry.answer||entry.cue||'这份整理还可以继续补充关键词、答案和纠错。';
-    return `<article class="panel material-card"><div class="material-card-meta"><span>${entry.part?'PART '+entry.part:'方法与地图'}</span><span class="material-status ${entry.status==='ready'?'ready':''}">${escape(entry.statusLabel||(entry.builtin?'已收录整理':entry.status==='ready'?'已整理':'待补充'))}</span></div><h2>${escape(entry.title)}</h2>${entry.titleEn?`<p class="material-title-en">${escape(entry.titleEn)}</p>`:''}<p class="material-excerpt">${escape(summary.slice(0,160))}</p><div class="material-tags">${tags.map(t=>`<span>${escape(t)}</span>`).join('')}</div><div class="material-card-footer"><small>${entry.builtin?(entry.clusterLabel||'全量口语资料')+' · PDF '+(entry.sourcePages||[]).join('、')+' 页':'我的练习'+(entry.updated?' · '+date(entry.updated)+' 更新':'')}</small><button class="btn light small" data-material-open="${escape(entry.id)}">${entry.builtin?'阅读整理':'打开整理'}${icon('arrow')}</button></div></article>`;
+    return `<article class="panel material-card"><div class="material-card-meta"><span>${entry.part?'PART '+entry.part:'方法与地图'}</span><span class="material-status ${entry.coachSeverity?entry.coachSeverity:entry.status==='ready'?'ready':''}">${escape(entry.coachStatus||entry.statusLabel||(entry.builtin?'已收录整理':entry.status==='ready'?'已整理':'待补充'))}</span></div><h2>${escape(entry.title)}</h2>${entry.titleEn?`<p class="material-title-en">${escape(entry.titleEn)}</p>`:''}<p class="material-excerpt">${escape(summary.slice(0,160))}</p><div class="material-tags">${entry.coachLogic?'<span>'+escape(coach.logic[entry.coachLogic].name)+'</span>':''}${tags.map(t=>`<span>${escape(t)}</span>`).join('')}</div><div class="material-card-footer"><small>${entry.builtin?(entry.date?'课堂意见 · '+entry.date:(entry.clusterLabel||'全量口语资料')+' · PDF '+(entry.sourcePages||[]).join('、')+' 页'):'我的练习'+(entry.updated?' · '+date(entry.updated)+' 更新':'')}</small><button class="btn light small" data-material-open="${escape(entry.id)}">${entry.builtin?'阅读整理':'打开整理'}${icon('arrow')}</button></div></article>`;
   }
   function listMarkup(){
     const all=entries(),mine=state().entries,draft=state().draft;
     const groups=[...new Map(builtins.filter(e=>e.cluster).map(e=>[e.cluster,e.clusterLabel])).entries()];
     return `<section class="panel material-header"><div class="material-heading"><span class="material-heading-icon">${icon('folder')}</span><div><div class="material-kicker">SPEAKING NOTEBOOK</div><h1>口语整理库</h1><p>练过一题，留下题卡、故事线和纠错。以后继续补充。</p></div></div><div class="material-header-actions">${draft?'<button class="btn light small" data-material-resume>继续草稿</button>':''}<button class="btn small" data-material-new>${icon('add')}新增练习整理</button></div></section>
-      <section class="panel material-bank-summary"><div><strong>你的全量口语资料</strong><p>20 道 Part 2 · 28 个 Part 1 话题 · 12 组 Part 3 逻辑<br>另有 6 个待补题、老师点评和全局纠错。原文 28 页完整保留。</p></div><div><button class="btn light small" data-material-open="REFERENCE-MAP">${icon('folder')}串题地图</button><a class="material-text-button" href="${escape(new URL('speaking-storybank-2026-10-07.pdf',assetBase).href)}" target="_blank" rel="noopener">查看原 PDF ↗</a></div></section>
+      ${coach.dashboardMarkup(all,state().review||{})}
+      <div class="material-source-strip">原资料：20 道 Part 2 · 28 个 Part 1 · 12 组 Part 3 · 6 个待补题<button class="material-text-button" data-material-open="REFERENCE-MAP">旧串题地图 →</button><a class="material-text-button" href="${escape(new URL('speaking-storybank-2026-10-07.pdf',assetBase).href)}" target="_blank" rel="noopener">28 页原 PDF ↗</a></div>
       <div class="material-library-meta"><span>${builtins.length} 份已收录整理 <span>／</span> ${mine.length} 份我的练习</span><button class="material-text-button" data-material-backup>设置与备份${icon('arrow')}</button></div>
-      <section class="panel material-tools"><div class="material-filters" role="group" aria-label="口语整理分类">${[0,1,2,3,4].map(p=>`<button aria-pressed="${part===p}" data-material-part="${p}" class="${part===p?'selected':''}">${p===4?'方法与地图':p?'Part '+p:'全部'}<span>${filterEntries(all,{part:p}).length}</span></button>`).join('')}</div><input class="search" id="materialSearch" aria-label="搜索口语整理" placeholder="搜索题目、故事、表达或纠错" value="${escape(query)}"><div class="material-secondary-filters"><label>来源<select id="materialSource" aria-label="按资料来源筛选"><option value="">全部资料</option><option value="builtin" ${sourceFilter==='builtin'?'selected':''}>已收录资料</option><option value="mine" ${sourceFilter==='mine'?'selected':''}>我的练习</option></select></label><label>故事<select id="materialCluster" aria-label="按故事筛选"><option value="">全部故事</option>${groups.map(([id,label])=>`<option value="${escape(id)}" ${cluster===id?'selected':''}>${escape(label)}</option>`).join('')}</select></label><label>状态<select id="materialStatus" aria-label="按整理状态筛选"><option value="">全部状态</option><option value="available" ${statusFilter==='available'?'selected':''}>已有可练素材</option><option value="pending" ${statusFilter==='pending'?'selected':''}>待补充／待续练</option></select></label></div></section>
+      <section class="panel material-tools"><div class="material-filters" role="group" aria-label="口语整理分类">${[0,1,2,3,4].map(p=>`<button aria-pressed="${part===p}" data-material-part="${p}" class="${part===p?'selected':''}">${p===4?'方法与地图':p?'Part '+p:'全部'}<span>${filterEntries(all,{part:p}).length}</span></button>`).join('')}</div><input class="search" id="materialSearch" aria-label="搜索口语整理" placeholder="搜索题目、故事、表达或纠错" value="${escape(query)}"><div class="material-secondary-filters"><label>来源<select id="materialSource" aria-label="按资料来源筛选"><option value="">全部资料</option><option value="builtin" ${sourceFilter==='builtin'?'selected':''}>已收录资料</option><option value="mine" ${sourceFilter==='mine'?'selected':''}>我的练习</option></select></label><label>故事<select id="materialCluster" aria-label="按故事筛选"><option value="">全部故事</option>${groups.map(([id,label])=>`<option value="${escape(id)}" ${cluster===id?'selected':''}>${escape(label)}</option>`).join('')}</select></label><label>状态<select id="materialStatus" aria-label="按整理状态筛选"><option value="">全部状态</option><option value="available" ${statusFilter==='available'?'selected':''}>原资料：已有内容</option><option value="pending" ${statusFilter==='pending'?'selected':''}>原资料：待补充</option>${[['good','老师：可保留'],['important','老师：需调整'],['critical','老师：关键风险'],['unreviewed','本节未评审']].map(([s,label])=>`<option value="coach-${s}" ${statusFilter==='coach-'+s?'selected':''}>${label}</option>`).join('')}</select></label></div></section>
       <div class="material-grid" id="materialResults">${resultsMarkup()}</div><section class="material-next"><span class="material-next-icon">${icon('add')}</span><div><h2>下一题，从这里开始</h2><p>可以先保存题目和关键词，再慢慢完善答案与纠错。未完成的整理会标记为“待补充”。</p><small>你的补充保存在当前浏览器；换设备前请导出学习备份。</small></div><button class="btn light small" data-material-new>添加我的练习</button></section>`;
   }
   function resultsMarkup(){const shown=filterEntries(entries(),{part,query,cluster,status:statusFilter,source:sourceFilter});return shown.length?shown.slice(0,limit).map(card).join('')+(shown.length>limit?`<div class="material-more"><span>已显示 ${Math.min(limit,shown.length)} / ${shown.length} 份</span><button class="btn light small" data-material-more>再显示 12 份${icon('arrow')}</button></div>`:''):'<div class="panel material-empty"><h2>这里还没有整理</h2><p>换一个筛选条件，或新增这一类的练习。</p><button class="btn light small" data-material-new>新增练习整理</button></div>';}
   function detailMarkup(entry){
     const header=`<div class="material-detail-nav"><button class="btn light small" data-material-list>← 返回整理库</button><span>${entry.part?'PART '+entry.part:'方法与地图'} · ${entry.builtin?'已收录整理':'我的练习'}</span>${entry.kind==='reference'?'':`<button class="btn small" data-material-edit="${escape(entry.id)}">${entry.builtin?'补充本题':'继续编辑'}</button>`}</div>`;
-    if(entry.builtin){const url=new URL(entry.file,assetBase);if(version)url.searchParams.set('v',version);const linked=builtins.filter(e=>e.id!==entry.id&&entry.cluster&&e.cluster===entry.cluster&&e.kind==='part2');return header+`<div class="material-reading"><iframe src="${escape(url.href)}" title="${escape(entry.title)}：完整口语整理" class="material-course-frame"></iframe></div>${entry.related||linked.length?`<div class="panel material-related"><h2>一个故事，可以迁移到这些题</h2><p>${escape(entry.related)}</p><div class="material-linked">${linked.map(e=>`<button class="btn light small" data-material-open="${escape(e.id)}">${escape(e.title)}${icon('arrow')}</button>`).join('')}</div></div>`:''}`;}
+    const coaching=entry.part===2?coach.detailMarkup(entry,variantChoices[entry.id],state().review||{}):'';
+    if(entry.builtin){const url=new URL(entry.file,assetBase);if(version)url.searchParams.set('v',version);const linked=builtins.filter(e=>e.id!==entry.id&&entry.cluster&&e.cluster===entry.cluster&&e.kind==='part2');return header+coaching+`${entry.part===2?'<details class="coach-archive"><summary>历史整理 · 2026-10-07（保留备查；练习请先看上方本节意见）</summary>':''}<div class="material-reading"><iframe src="${escape(url.href)}" title="${escape(entry.title)}：完整口语整理" class="material-course-frame"></iframe></div>${entry.part===2?'</details>':''}${entry.related||linked.length?`<div class="panel material-related"><h2>同故事题目 · 切换后重选证据</h2><p>${escape(entry.related)}</p><div class="material-linked">${linked.map(e=>`<button class="btn light small" data-material-open="${escape(e.id)}">${escape(e.title)}${icon('arrow')}</button>`).join('')}</div></div>`:''}`;}
     const source=builtins.find(e=>e.id===entry.sourceId);
-    return header+`<article class="panel material-personal-detail"><div class="material-kicker">PART ${entry.part} · ${entry.status==='ready'?'已整理':'待补充'}</div><h1>${escape(entry.title)}</h1>${source?`<button class="material-text-button" data-material-open="${escape(source.id)}">查看原题整理 →</button>`:''}${fields.filter(([key])=>!['title','tags'].includes(key)).map(([key,label])=>`<section><h2>${escape(label)}</h2>${entry[key]?body(entry[key]):'<p class="material-unfilled">尚未填写，可以在“继续编辑”中补充。</p>'}</section>`).join('')}</article>`;
+    return header+coaching+`<article class="panel material-personal-detail"><div class="material-kicker">PART ${entry.part} · ${entry.status==='ready'?'已整理':'待补充'}</div><h1>${escape(entry.title)}</h1>${source?`<button class="material-text-button" data-material-open="${escape(source.id)}">查看原题整理 →</button>`:''}${fields.filter(([key])=>!['title','tags'].includes(key)).map(([key,label])=>`<section><h2>${escape(label)}</h2>${entry[key]?body(entry[key]):'<p class="material-unfilled">尚未填写，可以在“继续编辑”中补充。</p>'}</section>`).join('')}</article>`;
   }
   function formMarkup(){
     return `<section class="panel material-form-panel"><div class="material-form-heading"><div><div class="material-kicker">MY PRACTICE</div><h1>${editing.id?'完善练习整理':'新增练习整理'}</h1><p>先留下能记住的内容；空白部分以后再补。</p></div><button class="btn light small" data-material-list>返回，保留草稿</button></div><form id="materialForm"><div class="material-form-grid"><label class="material-field material-full"><span class="material-field-label">题目名称 *</span><input name="title" aria-label="题目名称" maxlength="200" required value="${escape(editing.title)}" placeholder="例如：一门让我印象深刻的课程"></label><label class="material-field">Part 分类<select name="part" aria-label="Part 分类">${[1,2,3].map(p=>`<option value="${p}" ${editing.part===p?'selected':''}>Part ${p}</option>`).join('')}</select></label><label class="material-field">整理状态<select name="status" aria-label="整理状态"><option value="draft" ${editing.status==='draft'?'selected':''}>待补充</option><option value="ready" ${editing.status==='ready'?'selected':''}>已整理</option></select></label>${fields.filter(([key])=>key!=='title').map(([key,label,max,placeholder,type])=>`<label class="material-field material-full">${escape(label)}${type==='input'?`<input name="${key}" aria-label="${escape(label)}" maxlength="${max}" value="${escape(editing[key])}" placeholder="${escape(placeholder)}">`:`<textarea name="${key}" aria-label="${escape(label)}" maxlength="${max}" rows="${key==='answer'?8:3}" placeholder="${escape(placeholder)}">${escape(editing[key])}</textarea>`}</label>`).join('')}</div><div class="material-form-footer"><p id="materialDraftStatus" role="status" aria-live="polite">草稿会自动保存；切换栏目后可以继续填写。</p><button class="btn" type="submit">保存整理${icon('arrow')}</button></div></form></section>`;
@@ -85,13 +102,17 @@
     container.innerHTML=mode==='form'?formMarkup():mode==='detail'?detailMarkup(entry):listMarkup();
     bind();
   }
-  function showList(){if(!flushDraft())return;mode='list';draw();container?.scrollIntoView({block:'start'});}
+  function showList(){if(!flushAll())return;mode='list';draw();container?.scrollIntoView({block:'start'});}
   function bindResults(){
     container.querySelectorAll('#materialResults [data-material-open]').forEach(b=>b.onclick=()=>{selected=b.dataset.materialOpen;mode='detail';draw();container?.scrollIntoView({block:'start'});});
     container.querySelectorAll('#materialResults [data-material-new]').forEach(b=>b.onclick=()=>formFor(state().draft||{part:part>=1&&part<=3?part:2}));
     container.querySelector('[data-material-more]')?.addEventListener('click',()=>{limit+=12;container.querySelector('#materialResults').innerHTML=resultsMarkup();bindResults();});
   }
   function bind(){
+    container.querySelectorAll('[data-coach-filter]').forEach(b=>b.onclick=()=>{part=2;statusFilter=b.dataset.coachFilter==='total'?'':'coach-'+b.dataset.coachFilter;cluster='';sourceFilter='';query='';limit=12;draw();});
+    container.querySelector('#coachVariant')?.addEventListener('change',e=>{const next=e.target.value;if(!flushAll())return;variantChoices[selected]=next;draw();});
+    container.querySelectorAll('#coachProof,#coachLogic,[data-coach-check]').forEach(e=>e.addEventListener('input',()=>{clearTimeout(coachTimer);container.querySelector('#coachSaveStatus').textContent='正在保存自查…';coachTimer=setTimeout(flushCoach,500);}));
+    container.querySelector('[data-coach-practice]')?.addEventListener('click',e=>{if(!flushAll())return;const entry=entries().find(e=>e.id===selected);config.openPractice(entry,e.currentTarget.dataset.coachPractice);});
     container.querySelectorAll('[data-material-new]').forEach(b=>b.onclick=()=>{const draft=state().draft;if(draft){formFor(draft);config.notify('已恢复未完成草稿；保存后可新增下一题。');}else formFor({part:part>=1&&part<=3?part:2});});
     container.querySelector('[data-material-resume]')?.addEventListener('click',()=>formFor(state().draft));
     container.querySelector('[data-material-backup]')?.addEventListener('click',()=>config.openBackup());
@@ -116,6 +137,6 @@
       if(config.setState(upsertEntry(state().entries,entry),null)){editing=null;selected=entry.id;mode='detail';draw();config.notify('整理已保存，可以随时继续完善。');container?.scrollIntoView({block:'start'});}
     });}
   }
-  if(typeof window!=='undefined'){window.addEventListener('pagehide',flushDraft);window.addEventListener('beforeunload',e=>{if(!flushDraft()){e.preventDefault();e.returnValue='';}});}
-  return {builtins,escape,filterEntries,upsertEntry,configure,mount,beforeRender,beforeNavigate:flushDraft};
+  if(typeof window!=='undefined'){window.addEventListener('pagehide',flushAll);window.addEventListener('beforeunload',e=>{if(!flushAll()){e.preventDefault();e.returnValue='';}});}
+  return {builtins,escape,filterEntries,upsertEntry,configure,mount,beforeRender,beforeNavigate:flushAll};
 });

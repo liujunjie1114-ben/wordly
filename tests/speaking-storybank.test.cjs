@@ -43,12 +43,12 @@ test('missing personal details and queued memory questions stay pending and sear
   assert.ok(library.filterEntries(library.builtins,{query:'change my mood',part:1}).some(e=>e.id==='P1-22'));
   assert.ok(library.filterEntries(library.builtins,{query:'memorial objects',part:3}).some(e=>e.id==='P3-12'));
   assert.equal(library.filterEntries(library.builtins,{cluster:'SUMMER-SCHOOL',part:2}).length,4);
-  assert.equal(library.filterEntries(library.builtins,{part:4}).length,4);
+  assert.equal(library.filterEntries(library.builtins,{part:4}).length,5);
 });
 test('personal practice is independently accessible alongside the larger built-in bank',()=>{
   const entries=[...library.builtins.map(e=>({...e,builtin:true})),{id:'private-kept',part:2,title:'我的旧题',answer:'My own answer.',builtin:false}];
   assert.deepEqual(library.filterEntries(entries,{source:'mine'}).map(e=>e.id),['private-kept']);
-  assert.equal(library.filterEntries(entries,{source:'builtin'}).length,70);
+  assert.equal(library.filterEntries(entries,{source:'builtin'}).length,71);
   const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
   assert.ok(html.indexOf('src="/assets/speaking-storybank.js')<html.indexOf('src="/assets/speaking-library.js'));
 });
