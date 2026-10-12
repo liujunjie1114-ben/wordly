@@ -2,13 +2,15 @@
 
 ## 2026-10-12 听力课堂复盘
 
+已按日期收录 2026-10-03、2026-10-07 和 2026-10-12 三次课堂。`assets/listening-lessons.html` 为统一目录；三篇阅读页互相链接。前两篇各9节、最新一篇30节。历史日期、“今晚”、原一周计划和老师作业按原记录保留，未写入当前计划；尤其不将老师原10页807任务改为网站每日两页任务，也不自动更改用户现行任务。
+
 - `assets/listening-lesson-2026-10-12.md`：用户授权加入网站的课堂笔记，原文件逐字保留（1416 行）。
 - `assets/listening-lesson-2026-10-12.html`：静态全文阅读页，含 30 节目录、一页速记、70 分钟课后训练及原始 Markdown 下载。原题和课堂音频未提供，例题结论依据笔记，未独立核验。
-- `scripts/build-listening-lesson.mjs`：从笔记生成安全的静态 HTML；转义原文 HTML，保留代码块、表格、列表、引文和编号章节。
+- `scripts/build-listening-lesson.mjs`：配置三次课堂的日期、标题、快捷入口及阅读重点，从各篇原始 Markdown 生成阅读页和总目录。支持一级或二级章节标题，转义原文 HTML，保留代码块、表格、列表、引文和编号章节。
 - 今日计划、听力科目首页及 TED / BBC 页均提供入口；阅读页在新标签中打开，原页面的听写、计时及未保存编辑保持原状。
 - 不导入个人数据库、不标记任务完成、不改变复习队列和存储键。后续私人复盘仍留在本机，不能因本次公开笔记而自动发布用户数据库。
 
-更新笔记后运行 `node scripts/build-listening-lesson.mjs`，再按仓库约定运行全套测试和静态构建。修改 `study-dashboard.js` 或 CSS 后，更新 `index.html` 中对应文件的缓存版本。
+更新笔记后运行 `node scripts/build-listening-lesson.mjs`，再按仓库约定运行全套测试和静态构建。该脚本同时生成 `study-dashboard.js` 的课堂入口函数并更新 index 内 dashboard JS/CSS 哈希缓存版本；请先修改 CSS 再运行生成脚本。后续新增课堂在脚本 `lessons` 配置中加入日期及入口，原文件保存为 `assets/listening-lesson-YYYY-MM-DD.md`。
 
 保留静态 HTML 技术结构，没有服务端账号、付费接口或新数据库。
 

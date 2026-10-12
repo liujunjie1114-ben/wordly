@@ -32,3 +32,30 @@ test('classroom links appear on home and listening hubs without writing learning
   assert.match(dashboard.listeningLessonMarkup(),/target="_blank" rel="noopener"/);
   assert.equal(writes,0);assert.equal(JSON.stringify(data),before);
 });
+test('both older lessons retain all sections and use H2 chapter anchors with H3 subsections',async()=>{
+  const {renderLesson,lessons}=await import('../scripts/build-listening-lesson.mjs');
+  for(const lesson of lessons.slice(1)){
+    const source=fs.readFileSync(path.join(__dirname,'../assets/listening-lesson-'+lesson.date+'.md'),'utf8');
+    const result=renderLesson(source,lesson);
+    assert.deepEqual(result.toc.slice(1).map(h=>h.id),Array.from({length:9},(_,i)=>'section-'+(i+1)));
+    const html=fs.readFileSync(path.join(__dirname,'../assets/listening-lesson-'+lesson.date+'.html'),'utf8');
+    for(const [,id] of html.matchAll(/href="#([^"]+)"/g))assert.ok(html.includes('id="'+id+'"'),'missing '+lesson.date+' '+id);
+    assert.match(html,/历史课堂归档/);
+    assert.match(html,/下载原始笔记/);
+    assert.ok(result.html.includes(lesson.date==='2026-10-07'?'拼写、单复数、字数与单位逐项检查。':'本文件仅作为第一周执行方案。'),'missing ending');
+    assert.match(result.html,/<h3>/);
+  }
+});
+test('archive, all reading pages and dashboard link to every lesson using static paths',async()=>{
+  const {lessons}=await import('../scripts/build-listening-lesson.mjs');
+  const dashboard=require('../assets/study-dashboard.js').listeningLessonMarkup();
+  const catalog=fs.readFileSync(path.join(__dirname,'../assets/listening-lessons.html'),'utf8');
+  for(const lesson of lessons){
+    const name='listening-lesson-'+lesson.date+'.html';
+    assert.ok(dashboard.includes(name));assert.ok(catalog.includes(name));
+    const html=fs.readFileSync(path.join(__dirname,'../assets',name),'utf8');
+    assert.match(html,/href="listening-lessons.html"/);
+    for(const other of lessons.filter(l=>l.date!==lesson.date))assert.ok(html.includes('listening-lesson-'+other.date+'.html'));
+    assert.doesNotMatch(html,/<script\b|localStorage|indexedDB/);
+  }
+});
