@@ -69,3 +69,9 @@ test('large libraries store changing learning metadata apart from the stable con
  for(let at=101;at<109;at++)assert.equal(core.writeDb({...db,knowledge:core.markViewed(s,'cause',at)}).knowledge===stored.knowledge,true,'changing progress must reuse compressed content');
  const damaged=structuredClone(stored);damaged.studyLearningData.checksum='bad';assert.throws(()=>core.readDb(damaged));
 });
+test('loading a previously compressed library primes the cache before its first progress save',()=>{
+ const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path'),lz=require('../assets/lz-string.js');
+ const s=core.markViewed(core.normalizeState({entries:[e,...Array.from({length:140},(_,i)=>({...e,id:'cold-'+i,explanation:'私人正文'.repeat(2400)}))]}),'cause',100),db={words:[],knowledge:s,logs:[]},stored=core.writeDb(db);
+ let compressions=0;const spy={...lz,compressToUTF16(value){compressions++;return lz.compressToUTF16(value);}},c=vm.createContext({module:{exports:{}},require:()=>spy,TextEncoder});
+ vm.runInContext(fs.readFileSync(path.join(__dirname,'../assets/study-core.js'),'utf8'),c);const freshCore=c.module.exports,loaded=freshCore.readDb(stored);loaded.knowledge=freshCore.markViewed(loaded.knowledge,'cause',101);freshCore.writeDb(loaded);assert.equal(compressions,1,'only changed metadata needs compression');
+});

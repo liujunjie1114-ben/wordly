@@ -73,6 +73,15 @@ test('ordinary saves merge knowledge progress written in another tab without rep
  assert.equal(site.saved().knowledge.learning['existing-kp'].seenAt,777);assert.equal(site.saved().knowledge.learning['existing-kp'].familiarity,'partial');
  assert.deepEqual(site.saved().knowledge.entries,original.knowledge.entries);assert.deepEqual(site.saved().logs,original.logs);
 });
+test('metadata saves reuse the current database, but reload on another-tab change or a failed save',()=>{
+ const original=fixture(),core=require('../assets/study-core.js');original.knowledge=core.normalizeState({entries:[{id:'kp-cache',title:'缓存验证',categories:['reading'],sources:[{path:'local.md',locator:'第一节'}]}]});
+ const site=app(original),next=core.markViewed(original.knowledge,'kp-cache',777);
+ site.run('const originalLoad=load,baseline=load.lastRaw;let loads=0;load=function(){loads++;return originalLoad();};load.lastRaw=baseline;');
+ assert.equal(site.run(`saveStudyLearning(${JSON.stringify(next)})`),true);assert.equal(site.run(`saveStudyLearning(${JSON.stringify(next)})`),true);assert.equal(site.run('loads'),0);
+ site.run('const other=structuredClone(db);other.logs.push({id:"other-tab-cache",date:10,title:"其他标签",results:[]});localStorage.setItem(KEY,JSON.stringify(WordlyStudyCore.writeDb(other)));');
+ assert.equal(site.run(`saveStudyLearning(${JSON.stringify(next)})`),true);assert.equal(site.run('loads'),1);assert.equal(site.saved().logs.at(-1).id,'other-tab-cache');
+ site.run('const priorWrite=localStorage.setItem;localStorage.setItem=()=>{throw Error("quota");};');assert.equal(site.run(`saveStudyLearning(${JSON.stringify(next)})`),false);site.run('localStorage.setItem=priorWrite;');assert.equal(site.run(`saveStudyLearning(${JSON.stringify(next)})`),true);assert.equal(site.run('loads'),2);
+});
 
 test('teacher task first answers and retests survive reload and complete backup without changing prior learning',async()=>{
   const original=fixture(),core=require('../assets/word-tasks.js');
