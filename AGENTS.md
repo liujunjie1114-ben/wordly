@@ -16,3 +16,4 @@
 - 修改课堂意见原文后运行 `node scripts/build-speaking-coach.mjs`，再执行口语缓存版本、测试和静态构建。
 - 单词音频预载和缓存位于 `assets/word-audio.js` 与 `audio-worker.js`；缓存仅限散列命名的 MP3，不得扩展为缓存 HTML、用户学习数据或录音。修改音频模块后更新 index 中的模块缓存版本，GitHub Pages 必须保留根目录 worker。
 - 老师每日单词任务定义在 `assets/teacher-word-tasks.js`，只发布日期、范围和已导入词项ID，不发布私人词库或答题记录。新日期追加，不替换旧任务ID。答案、首次尝试与复测历史保存在原数据库的 `wordTasks`，随完整备份保留；不自动改动30天计划、旧听写和熟练度。修改模块或任务定义后运行 `node scripts/version-word-tasks.mjs`。
+- 知识点阅读、熟悉程度、检测历史/草稿保存在 `knowledge.learning`，列表筛选及上次位置在 `knowledge.libraryView`；打开只计看过，提交练习才计练过，自评熟悉不代表自动过关。大库用 `studyLearningData` 无损分离压缩元数据，读取时复原到原知识库。自动题在 `assets/knowledge-checks.js`，改题需递增版本、保留旧成绩快照；未配题和待核对内容不得冒充过关。修改后运行 `node scripts/version-study-library.mjs`，验证备份、重复导入及旧学习记录保留；私人答案不得发布到仓库。

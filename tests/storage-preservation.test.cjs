@@ -41,6 +41,7 @@ function app(initial) {
   const names = ['uid','validCalendarDay','safeReviewNumber','normalizeReview','normalizeMemory','normalizeVocabPractice','normalizeListening','normalizeReading','normalizeSpeakingBank','normalizeSpeakingMaterial','normalizeSpeakingMaterials','normalizeSpeakingMaterialDraft','normalizeStudy','normalizeDb','load','save','seed807','seedFirstDictation','migrateReview'];
   context.WordlyWordTasks=require('../assets/word-tasks.js');
   if(html.includes('function saveTeacherWordTasks('))names.push('saveTeacherWordTasks');
+  if(html.includes('function saveStudyLearning('))names.push('saveStudyLearning');
   if(html.includes('function saveStudyMaterials('))names.push('saveStudyMaterials');
   for(const name of ['restoreLearningBackup','downloadRecoveryBackup','downloadBackup','saveStudyPlan'])if(html.includes(`function ${name}(`))names.push(name);
   vm.runInContext(`let storageReadFailed=false;const KEY='wordly_app_v1';const defaults={words:[],logs:[],mistakes:{},settings:{mode:'meaning',feedback:'instant',plays:2,interval:3,auto:false,voice:''}};${names.map(functionSource).join('\n')}let db=load();`,context);
@@ -50,6 +51,27 @@ test('deployment continues using existing learning and recording storage identit
   assert.match(html,/const KEY='wordly_app_v1'/);
   assert.match(html,/indexedDB\.open\('wordly_audio_v1',1\)/);
   assert.doesNotMatch(html,/localStorage\.clear\s*\(|indexedDB\.deleteDatabase\s*\(/);
+});
+
+test('knowledge read state, familiarity, failed checks and drafts survive backup, import and restore',async()=>{
+ const original=fixture(),core=require('../assets/study-core.js'),quiz=require('../assets/knowledge-checks.js')['supp-cause-direction'];
+ original.knowledge=core.normalizeState({entries:[{id:quiz.entryId,title:'因果搭配',kind:'knowledge',categories:['writing'],summary:'个人解释',example:'My own sentence.',sources:[{path:'my-note.md',locator:'第一节'}]}],review:{[quiz.entryId]:{stage:2,due:123456,last:100,reviews:2,lapses:0}}});
+ let next=core.markViewed(original.knowledge,quiz.entryId,200);next=core.setFamiliarity(next,quiz.entryId,'partial',201);
+ next=core.submitCheck(next,quiz.entryId,quiz,{'cause-in':'from','effect-from':'from',contribution:'b'},{at:202,id:'original-failed'});
+ next=core.saveCheckDraft(next,quiz.entryId,quiz,{'cause-in':'in'},203,['cause-in']);
+ next=core.setLibraryView(next,{subject:'writing',kind:'knowledge',phase:'practiced',query:'因果',limit:36,lastId:quiz.entryId,scroll:900},204);
+ const site=app(original);assert.equal(site.run(`saveStudyLearning(${JSON.stringify(next)})`),true);site.run('db=load();downloadBackup(db);');
+ assert.deepEqual(site.saved().knowledge.learning,next.learning);assert.deepEqual(site.saved().knowledge.review,original.knowledge.review);
+ for(const key of ['words','logs','mistakes','daily','reading','memoryTyping','review'])assert.deepEqual(site.saved()[key],original[key]);
+ const backup=JSON.parse(await site.downloads[0].text()),restored=app(fixture());assert.equal(restored.run(`restoreLearningBackup(${JSON.stringify(backup)})`),true);
+ assert.deepEqual(restored.saved().knowledge,next);
+ site.run('localStorage.setItem=()=>{throw Error("quota");};');const before=site.run('JSON.stringify(db)');assert.equal(site.run(`saveStudyLearning(${JSON.stringify(next)})`),false);assert.equal(site.run('JSON.stringify(db)'),before);
+});
+test('ordinary saves merge knowledge progress written in another tab without replacing private content',()=>{
+ const original=fixture(),core=require('../assets/study-core.js');original.knowledge=core.normalizeState({entries:[{id:'existing-kp',title:'我的私人解释',summary:'不覆盖这段',categories:['reading'],sources:[{path:'private.md',locator:'第一节'}]}]});
+ const site=app(original);site.run('const other=structuredClone(db);other.knowledge=WordlyStudyCore.markViewed(other.knowledge,"existing-kp",777);other.knowledge=WordlyStudyCore.setFamiliarity(other.knowledge,"existing-kp","partial",778);localStorage.setItem(KEY,JSON.stringify(WordlyStudyCore.writeDb(other)));save();db=load();');
+ assert.equal(site.saved().knowledge.learning['existing-kp'].seenAt,777);assert.equal(site.saved().knowledge.learning['existing-kp'].familiarity,'partial');
+ assert.deepEqual(site.saved().knowledge.entries,original.knowledge.entries);assert.deepEqual(site.saved().logs,original.logs);
 });
 
 test('teacher task first answers and retests survive reload and complete backup without changing prior learning',async()=>{
