@@ -15,3 +15,4 @@
 - 题干与证据自查保存在 `speaking.coachReview`，按题目及版本分别记录；计时草稿和复盘的八项新自查使用 `coachChecks`，不占用原来的六项 `checks`。旧备份默认空状态，恢复、更新均保留已有记录。
 - 修改课堂意见原文后运行 `node scripts/build-speaking-coach.mjs`，再执行口语缓存版本、测试和静态构建。
 - 单词音频预载和缓存位于 `assets/word-audio.js` 与 `audio-worker.js`；缓存仅限散列命名的 MP3，不得扩展为缓存 HTML、用户学习数据或录音。修改音频模块后更新 index 中的模块缓存版本，GitHub Pages 必须保留根目录 worker。
+- 老师每日单词任务定义在 `assets/teacher-word-tasks.js`，只发布日期、范围和已导入词项ID，不发布私人词库或答题记录。新日期追加，不替换旧任务ID。答案、首次尝试与复测历史保存在原数据库的 `wordTasks`，随完整备份保留；不自动改动30天计划、旧听写和熟练度。修改模块或任务定义后运行 `node scripts/version-word-tasks.mjs`。

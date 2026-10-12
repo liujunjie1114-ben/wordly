@@ -62,7 +62,7 @@
   }
   function beforeNavigate(){if(drafts.size){config.notify('任务复盘尚未保存，请先点击“保存复盘”再切页。');return false;}return true;}
   function beforeRender(){node=null;}
-  function redraw(){if(!node)return;node.innerHTML=mode==='home'?homeMarkup():subjectMarkup(mode);bind();}
+  function redraw(){if(!node||config.canRedraw?.()===false)return;node.innerHTML=mode==='home'?homeMarkup():subjectMarkup(mode);bind();if(mode==='home')config.onHomeRender?.(node);}
   function bind(){
     if(!node)return;
     const on=(selector,event,fn)=>node.querySelectorAll(selector).forEach(el=>el.addEventListener(event,()=>fn(el)));

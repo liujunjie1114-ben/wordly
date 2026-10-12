@@ -39,6 +39,8 @@ function app(initial) {
   const downloads=[];
   const context = vm.createContext({structuredClone,console,Blob,URL:{createObjectURL(blob){downloads.push(blob);return 'blob:test';},revokeObjectURL(){}},setTimeout(){},document:{createElement(){return {click(){}};}},WordlySpeakingCoach:require('../assets/speaking-coach.js'),WordlyStudyCore:require('../assets/study-core.js'),WordlyMonthPlan:require('../assets/month-plan-core.js'),localStorage:{getItem:key=>memory.get(key)||null,setItem:(key,value)=>memory.set(key,value)},renderNav(){},toast(){},WANG807:arraySource('WANG807'),FIRST_DICTATION:arraySource('FIRST_DICTATION'),FIRST_LESSON_ID:'first-dictation-2026-10-06',FIRST_LESSON_TIME:1791244800000});
   const names = ['uid','validCalendarDay','safeReviewNumber','normalizeReview','normalizeMemory','normalizeVocabPractice','normalizeListening','normalizeReading','normalizeSpeakingBank','normalizeSpeakingMaterial','normalizeSpeakingMaterials','normalizeSpeakingMaterialDraft','normalizeStudy','normalizeDb','load','save','seed807','seedFirstDictation','migrateReview'];
+  context.WordlyWordTasks=require('../assets/word-tasks.js');
+  if(html.includes('function saveTeacherWordTasks('))names.push('saveTeacherWordTasks');
   if(html.includes('function saveStudyMaterials('))names.push('saveStudyMaterials');
   for(const name of ['restoreLearningBackup','downloadRecoveryBackup','downloadBackup','saveStudyPlan'])if(html.includes(`function ${name}(`))names.push(name);
   vm.runInContext(`let storageReadFailed=false;const KEY='wordly_app_v1';const defaults={words:[],logs:[],mistakes:{},settings:{mode:'meaning',feedback:'instant',plays:2,interval:3,auto:false,voice:''}};${names.map(functionSource).join('\n')}let db=load();`,context);
@@ -48,6 +50,38 @@ test('deployment continues using existing learning and recording storage identit
   assert.match(html,/const KEY='wordly_app_v1'/);
   assert.match(html,/indexedDB\.open\('wordly_audio_v1',1\)/);
   assert.doesNotMatch(html,/localStorage\.clear\s*\(|indexedDB\.deleteDatabase\s*\(/);
+});
+
+test('teacher task first answers and retests survive reload and complete backup without changing prior learning',async()=>{
+  const original=fixture(),core=require('../assets/word-tasks.js');
+  const task={id:'teacher-2026-10-13-reading',items:[{key:'r-1',entryId:'a'}]};
+  original.wordTasks=core.record({},task,'r-1',{entered:'增加',correct:false,judgement:'self',at:1});
+  const site=app(original);site.run('save();db=load();downloadBackup(db);');
+  assert.deepEqual(site.saved().wordTasks,original.wordTasks);
+  assert.deepEqual(JSON.parse(await site.downloads[0].text()).wordTasks,original.wordTasks);
+  for(const key of ['words','logs','mistakes','review','memoryTyping','daily','reading'])assert.deepEqual(site.saved()[key],original[key],key);
+  const empty=app(fixture());assert.deepEqual(JSON.parse(empty.run('JSON.stringify(db.wordTasks)')),{tasks:{}});
+  site.run('saveTeacherWordTasks(WordlyWordTasks.record(db.wordTasks,{id:"teacher-2026-10-13-reading",items:[{key:"r-1",entryId:"a"}]},"r-1",{entered:"上升",correct:true,judgement:"self",at:2}));db=load();');
+  assert.equal(site.saved().wordTasks.tasks[task.id].items['r-1'].first.entered,'增加');
+  assert.equal(site.saved().wordTasks.tasks[task.id].items['r-1'].latest.correct,true);
+});
+
+test('explicit backup restore can recover corrupt teacher task data instead of merging damaged bytes',()=>{
+ const damaged=fixture();damaged.wordTasks={tasks:{broken:{items:[],history:[]}}};
+ const site=app(damaged);assert.equal(site.run('storageReadFailed'),true);
+ assert.equal(site.run(`restoreLearningBackup(${JSON.stringify(fixture())})`),true);
+ assert.deepEqual(site.saved().wordTasks,{tasks:{}});
+});
+
+test('saving a teacher answer uses latest other-tab learning records and rolls back on quota failure',()=>{
+ const original=fixture(),site=app(original),core=require('../assets/word-tasks.js');
+ site.run('const newer=structuredClone(db);newer.logs.push({id:"other-tab",date:10,title:"另一个标签的听写",results:[]});localStorage.setItem(KEY,JSON.stringify(WordlyStudyCore.writeDb(newer)));');
+ const task={id:'teacher-2026-10-13-reading',items:[{key:'r-1',entryId:'a'}]},next=core.record({},task,'r-1',{entered:'上升',correct:true,judgement:'self',at:1});
+ assert.equal(site.run(`saveTeacherWordTasks(${JSON.stringify(next)})`),true);
+ assert.equal(site.saved().logs.at(-1).id,'other-tab');
+ const before=site.run('JSON.stringify(db)');site.run('localStorage.setItem=()=>{throw Error("quota");};');
+ assert.equal(site.run('saveTeacherWordTasks({tasks:{}})'),false);
+ assert.equal(site.run('JSON.stringify(db)'),before);
 });
 
 test('fast dictation pace survives reload without altering any learning records',()=>{
