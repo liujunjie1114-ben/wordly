@@ -34,7 +34,8 @@ html=html.replace(/const AUDIO_PACK=\{[^\n]+\};/,'const AUDIO_PACK='+JSON.string
   .replace('if(w)playText(w.en,+db.settings.plays,+db.settings.interval,.8);','if(w)playText(w.en,+db.settings.plays,+db.settings.interval,1);')
   .replace('speak:text=>playText(text,1,0,.85)','speak:text=>playText(text,1,0,1)')
   .replace(/word-audio\.js\?v=[^"']+/,'word-audio.js?v=20261013-kokoro1');
-if(!html.includes('id="playbackStatus"'))html=html.replace('${e?`<div class="example-full">','<p id="playbackStatus" class="study-audio-status" role="status" aria-live="polite" hidden></p>${e?`<div class="example-full">');
+html=html.replace("['playbackStatus','studyAudioStatus']","['playbackStatus','studyAudioStatus','exampleAudioStatus']");
+if(!html.includes('id="exampleAudioStatus"'))html=html.replace('${e?`<div class="example-full">','<p id="exampleAudioStatus" class="study-audio-status" role="status" aria-live="polite" hidden></p>${e?`<div class="example-full">');
 if(html.includes('Piper en_GB-cori-medium')||!html.includes('Kokoro 英式神经语音'))throw Error('Audio source text was not updated');
 fs.writeFileSync(path.join(root,'index.html'),html);
 console.log(JSON.stringify({engine:manifest.engine,voice:manifest.voice,clips:manifest.clips.length,oldFilesRetained:true,userDataTouched:false}));

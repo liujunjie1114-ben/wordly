@@ -68,6 +68,12 @@ test('a completed built-in playback still identifies the neural pronunciation so
   const p=playback();p.run("playText('test')");FakeAudio.instances[0].onended();
   assert.match(p.statuses.at(-1),/播放完成.*Kokoro/);
 });
+test('the word dialog receives playback status even when the header notice is outside the viewport',()=>{
+  const node={hidden:true,textContent:'',classList:{toggle(){}}};
+  const context=vm.createContext({document:{querySelector:selector=>selector==='#exampleAudioStatus'?node:null}});
+  vm.runInContext(source('playbackStatus')+";playbackStatus('播放完成 · Kokoro 英式语音');",context);
+  assert.equal(node.hidden,false);assert.match(node.textContent,/Kokoro/);
+});
 test('slow audio falls back to an available offline English voice and cancellation is safe',()=>{
   const p=playback();p.run("playText('test')");const stalled=FakeAudio.instances[0];stalled.onwaiting();
   const fallback=[...p.timers.values()].find(t=>t.delay<=3000);assert.ok(fallback);fallback.fn();assert.deepEqual(p.spoken,['test']);assert.ok(stalled.paused);
