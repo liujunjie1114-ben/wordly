@@ -8,19 +8,25 @@
   "sampleRate": 24000,
   "license": "Apache-2.0",
   "modelSource": "https://huggingface.co/hexgrad/Kokoro-82M",
-  "overrideVersion": 1,
+  "overrideVersion": 2,
   "clips": [
     {
       "key": "archaeological",
       "text": "archaeological",
-      "url": "/assets/99759ced16f7817fe7e2c2cb.mp3",
-      "sha256": "99759ced16f7817fe7e2c2cbf1dc98b969107bf4feaefe91902818be2a257acb",
-      "duration": 1.3802,
+      "url": "/assets/a7af0f53543a3abc74605e02.mp3",
+      "sha256": "a7af0f53543a3abc74605e02e35b923d40ca1a31f0043d82124cfa8ee5aebb9d",
+      "duration": 1.1071,
       "phonemes": "ˌɑːkiəlˈɒʤɪkᵊl.",
       "overrides": [
         "archaeological"
       ],
-      "inputHash": "9bdfd5ad822c977ea6b8efbc4545edef4d79084d2e615ce60825f4815a69820c"
+      "inputHash": "b7396cb6983dfdf4113afdd3a997e7be262397cec6712fdc6cbf32bec589ad51",
+      "isolationContext": "The word is: {word}.",
+      "contextPhonemes": "ðə wˈɜːd ɪz: ˌɑːkiəlˈɒʤɪkᵊl.",
+      "crop": {
+        "start": 0.9949583333333333,
+        "end": 2.335
+      }
     },
     {
       "key": "environment",

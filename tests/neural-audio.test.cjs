@@ -45,6 +45,17 @@ test('reported pronunciations have reproducible phoneme overrides in words and s
   }
 });
 
+test('the troublesome isolated word uses aligned context synthesis without speaking the carrier phrase',()=>{
+  const m=manifest(),clip=m.clips.find(c=>c.key==='archaeological');
+  const rules=JSON.parse(fs.readFileSync(path.join(root,'scripts/pronunciation-overrides.json'),'utf8'));
+  assert.equal(rules.words.archaeological.isolationContext,'The word is: {word}.');
+  assert.equal(clip.isolationContext,'The word is: {word}.');
+  assert.ok(clip.crop.start>0&&clip.crop.end>clip.crop.start);
+  assert.ok(clip.duration<2);
+  assert.match(clip.contextPhonemes,/ˌɑːkiəlˈɒʤɪkᵊl/);
+  assert.notEqual(pack.archaeological,'/assets/99759ced16f7817fe7e2c2cb.mp3');
+});
+
 test('built-in words and examples stay covered without modifying their IDs or contents',()=>{
   const words=JSON.parse(html.match(/const WANG807=(\[[^\n]+\]);/)[1]);
   assert.equal(words.length,1854);

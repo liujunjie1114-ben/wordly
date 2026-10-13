@@ -1,11 +1,12 @@
 {
-  "version": 1,
+  "version": 2,
   "language": "en-GB",
   "notation": "Misaki/Kokoro English phonemes; not literal IPA",
   "words": {
     "archaeological": {
       "ipa": "ˌɑːkiəˈlɒdʒɪkəl",
       "phonemes": "ˌɑːkiəlˈɒʤɪkᵊl",
+      "isolationContext": "The word is: {word}.",
       "source": "https://dictionary.cambridge.org/dictionary/english/archaeological"
     },
     "environment": {

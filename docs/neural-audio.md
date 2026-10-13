@@ -30,6 +30,8 @@ git diff --check
 
 IPA 与模型输入符号不同；转换依据 [Misaki 英语音素说明](https://github.com/hexgrad/misaki/blob/main/EN_PHONES.md)。新音频仍是合成参考，不能把模型更换、自动语音识别通过或 HTTP 200 等同于逐词由真人审校。多音词需要核对具体词性和语境。后续反馈应追加纠正规则后重新生成，不能直接覆盖散列命名的旧文件。
 
+短词/孤立词仍可能受模型的短句弱项影响。`archaeological` 的单独发音使用 `isolationContext` 先在短句中生成，再根据模型音素时长对齐仅截取目标词；不会播放引导句。例句继续整句生成，不裁剪。清单保留上下文音素与裁剪范围，维护时须同时核对单词和例句，不能把语音识别结果直接当作音标。
+
 ## 播放、缓存与数据
 
 `assets/neural-audio-manifest.json` 记录每段公开音频的文本、音素、使用的规则、时长、输入和文件 SHA-256。实际页面继续用 `AUDIO_PACK` 定位资源，无需额外请求清单。`assets/kokoro-LICENSE.txt` 保留 Apache-2.0 许可，模型来源见 [官方模型卡](https://huggingface.co/hexgrad/Kokoro-82M)。

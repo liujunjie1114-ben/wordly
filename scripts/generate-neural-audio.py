@@ -87,8 +87,11 @@ def main():
     started = time.time()
     with journal.open("a", encoding="utf-8") as log:
         for index, (key, text) in enumerate(texts.items(), 1):
-            prepared, overrides = corrected_text(text, rules)
-            fingerprint = hashlib.sha256(json.dumps(["Kokoro-82M-v1.0", VOICE, prepared, 1, rules["version"]], ensure_ascii=False).encode()).hexdigest()
+            isolation_context = rules["words"].get(key, {}).get("isolationContext")
+            synthesis_text = isolation_context.replace("{word}", text) if isolation_context else text
+            prepared, overrides = corrected_text(synthesis_text, rules)
+            # Hash the effective input, not unrelated rules elsewhere in the dictionary.
+            fingerprint = hashlib.sha256(json.dumps(["Kokoro-82M-v1.0", VOICE, prepared, 1, 1], ensure_ascii=False).encode()).hexdigest()
             if key in completed and completed[key].get("inputHash") == fingerprint:
                 continue
             results = list(pipeline(prepared, voice=VOICE, speed=1, split_pattern=r"\n+"))
@@ -99,6 +102,21 @@ def main():
             if len(chunks) != len(results) or not chunks:
                 raise RuntimeError("Missing generated audio: " + key)
             audio = np.concatenate(chunks).astype(np.float32)
+            crop = None
+            context_phonemes = None
+            if isolation_context:
+                if len(results) != 1:
+                    raise RuntimeError("Isolation context must fit one generated segment: " + key)
+                targets = [token for token in results[0].tokens if normalize(token.text) == key]
+                if len(targets) != 1 or targets[0].start_ts is None or targets[0].end_ts is None:
+                    raise RuntimeError("Cannot align isolated word: " + key)
+                target = targets[0]
+                start = max(0, int((target.start_ts - .03) * 24000))
+                end = min(len(audio), int((target.end_ts + .06) * 24000))
+                audio = audio[start:end]
+                crop = {"start": start / 24000, "end": end / 24000}
+                context_phonemes = phonemes
+                phonemes = target.phonemes + "."
             # Keep consonant edges and a short natural boundary, remove only near-silence.
             audible = np.flatnonzero(np.abs(audio) > 0.0003)
             if not len(audible):
@@ -121,6 +139,8 @@ def main():
             clip = {"key": key, "text": text, "url": "/assets/" + name, "sha256": digest,
                     "duration": round(len(audio) / 24000, 4), "phonemes": phonemes, "overrides": overrides,
                     "inputHash": fingerprint}
+            if isolation_context:
+                clip.update({"isolationContext": isolation_context, "contextPhonemes": context_phonemes, "crop": crop})
             log.write(json.dumps(clip, ensure_ascii=False) + "\n")
             log.flush()
             completed[key] = clip
