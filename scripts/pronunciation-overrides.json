@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "language": "en-GB",
+  "notation": "Misaki/Kokoro English phonemes; not literal IPA",
+  "words": {
+    "archaeological": {
+      "ipa": "ˌɑːkiəˈlɒdʒɪkəl",
+      "phonemes": "ˌɑːkiəlˈɒʤɪkᵊl",
+      "source": "https://dictionary.cambridge.org/dictionary/english/archaeological"
+    },
+    "environment": {
+      "ipa": "ɪnˈvaɪrəmənt",
+      "phonemes": "ɪnvˈIɹəmənt",
+      "source": "https://dictionary.cambridge.org/pronunciation/english/environment"
+    }
+  }
+}

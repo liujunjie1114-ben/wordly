@@ -93,11 +93,11 @@ test('composition and held keys cannot submit or skip memory steps',()=>{
   assert.equal(ui.saves(),0);
 });
 
-test('dictation slows each utterance while preserving repeat count and pause',()=>{
+test('dictation uses natural recording speed while preserving repeat count and pause',()=>{
   const calls=[];
   const context=vm.createContext({session:{index:0,checked:false,words:[{en:'environment'}]},db:{settings:{plays:2,interval:3}},playText(...args){calls.push(args);}});
   vm.runInContext(source('playCurrent')+'\nplayCurrent();',context);
-  assert.deepEqual(calls,[['environment',2,3,0.8]]);
+  assert.deepEqual(calls,[['environment',2,3,1]]);
   vm.runInContext('session.checked=true;playCurrent();session=null;playCurrent();',context);
   assert.equal(calls.length,1);
 });

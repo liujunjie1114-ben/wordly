@@ -64,6 +64,10 @@ test('actual playback repeats a buffered player without creating another request
   FakeAudio.instances[0].onended();const gap=[...p.timers.values()].find(t=>t.delay===3000);assert.ok(gap);gap.fn();
   assert.equal(FakeAudio.instances.length,1);assert.equal(FakeAudio.instances[0].currentTime,0);
 });
+test('a completed built-in playback still identifies the neural pronunciation source',()=>{
+  const p=playback();p.run("playText('test')");FakeAudio.instances[0].onended();
+  assert.match(p.statuses.at(-1),/播放完成.*Kokoro/);
+});
 test('slow audio falls back to an available offline English voice and cancellation is safe',()=>{
   const p=playback();p.run("playText('test')");const stalled=FakeAudio.instances[0];stalled.onwaiting();
   const fallback=[...p.timers.values()].find(t=>t.delay<=3000);assert.ok(fallback);fallback.fn();assert.deepEqual(p.spoken,['test']);assert.ok(stalled.paused);
