@@ -7,28 +7,50 @@
   const canonical=s=>text(s,1000).normalize('NFKC').toLowerCase().trim().replace(/\s+/g,' ');
   const safeId=s=>typeof s==='string'&&/^[\w-]{1,100}$/.test(s)&&!['__proto__','constructor','prototype'].includes(s);
   const checksum=s=>{let hash=2166136261;for(let i=0;i<s.length;i++)hash=Math.imul(hash^s.charCodeAt(i),16777619);return (hash>>>0).toString(16);};
-  const compactCache=new Map();
-  function compact(value){const raw=JSON.stringify(value);if(compactCache.has(raw)){const cached=compactCache.get(raw);compactCache.delete(raw);compactCache.set(raw,cached);return cached;}const packed={encoding:'lz-string-utf16-v1',length:raw.length,checksum:checksum(raw),data:lz.compressToUTF16(raw)};compactCache.set(raw,packed);if(compactCache.size>4)compactCache.delete(compactCache.keys().next().value);return packed;}
-  function expand(value){if(!value||value.encoding!=='lz-string-utf16-v1')return value;if(!lz||typeof value.data!=='string'||value.data.length>15000000||!Number.isInteger(value.length)||value.length<1||value.length>50000000)throw Error('压缩资料格式异常，请保留原备份。');const raw=lz.decompressFromUTF16(value.data);if(typeof raw!=='string'||raw.length!==value.length||checksum(raw)!==value.checksum)throw Error('压缩资料校验失败，请保留原备份。');const cached=compactCache.get(raw)||{...value};compactCache.delete(raw);compactCache.set(raw,cached);if(compactCache.size>4)compactCache.delete(compactCache.keys().next().value);return JSON.parse(raw);}
+  const compactCaches=new Map();
+  function cacheFor(part){if(!compactCaches.has(part))compactCaches.set(part,new Map());return compactCaches.get(part);}
+  function remember(cache,raw,packed){cache.delete(raw);cache.set(raw,packed);if(cache.size>2)cache.delete(cache.keys().next().value);return packed;}
+  function compact(value,part){const raw=JSON.stringify(value),cache=cacheFor(part);if(cache.has(raw))return remember(cache,raw,cache.get(raw));return remember(cache,raw,{encoding:'lz-string-utf16-v1',length:raw.length,checksum:checksum(raw),data:lz.compressToUTF16(raw)});}
+  function expand(value,part){if(!value||value.encoding!=='lz-string-utf16-v1')return value;if(!lz||typeof value.data!=='string'||value.data.length>15000000||!Number.isInteger(value.length)||value.length<1||value.length>50000000)throw Error('压缩资料格式异常，请保留原备份。');const cache=cacheFor(part),hit=[...cache].find(([,p])=>p.data===value.data&&p.length===value.length&&p.checksum===value.checksum);if(hit){remember(cache,hit[0],hit[1]);return JSON.parse(hit[0]);}const raw=lz.decompressFromUTF16(value.data);if(typeof raw!=='string'||raw.length!==value.length||checksum(raw)!==value.checksum)throw Error('压缩资料校验失败，请保留原备份。');remember(cache,raw,{...value});return JSON.parse(raw);}
   const wordMeta=['studySources','studyCategories','studyTags','studyEntryIds','studyMeanings','studyCollocations'];
+  const wordProgress=['appearances','correctCount','mastered','dismissed'];
+  function progressRows(words){const rows=[];words.forEach((word,index)=>{let mask=0;const values=[];wordProgress.forEach((k,i)=>{if(Object.hasOwn(word,k)){mask|=1<<i;values.push(word[k]);}});if(mask)rows.push([index,word.id,mask,...values]);});return rows;}
+  function applyProgress(words,rows){const seen=new Set();if(!Array.isArray(rows)||!Array.isArray(words)||rows.length>words.length)throw Error('词汇进度格式错误。');for(const row of rows){if(!Array.isArray(row)||!Number.isInteger(row[0])||row[0]<0||row[0]>=words.length||words[row[0]]?.id!==row[1]||seen.has(row[0])||!Number.isInteger(row[2])||row[2]<1||row[2]>15)throw Error('词汇进度与原词库不一致。');seen.add(row[0]);let j=3;wordProgress.forEach((key,i)=>{delete words[row[0]][key];if(row[2]&(1<<i)){const v=row[j++];if(i<2?typeof v!=='number'||!Number.isFinite(v)||v<0:typeof v!=='boolean')throw Error('词汇进度数值异常。');words[row[0]][key]=v;}});if(j!==row.length)throw Error('词汇进度字段异常。');}}
+  // Called only by the two practice handlers, after the root has checked lastRaw.
+  function writeProgressDb(value,stored){
+    if(!stored?.studyWordProgress){
+      if(!stored||stored.words?.encoding!=='lz-string-utf16-v1'&&(value.words?.length||0)<4000)return writeDb(value);
+      // Preserve legacy packed content; only add a small progress snapshot once.
+      const original=expand(stored.words,'words');
+      if(!Array.isArray(original))return writeDb(value);
+      stored={...stored,studyWordProgress:compact(progressRows(original),'word-progress')};
+    }
+    const previous=expand(stored.studyWordProgress,'word-progress'),rows=progressRows(value.words);
+    if(!Array.isArray(previous)||previous.length!==rows.length||previous.some((row,i)=>!Array.isArray(row)||row[0]!==rows[i][0]||row[1]!==rows[i][1]))return writeDb(value);
+    const changes=rows.filter((row,i)=>row.length!==previous[i].length||row.some((v,j)=>v!==previous[i][j]));
+    return {...stored,studyWordProgressChanges:changes,review:value.review,mistakes:value.mistakes,memoryTyping:value.memoryTyping};
+  }
   function writeDb(value){
-    if(JSON.stringify(value).length<1000000)return value;
+    if((value.words?.length||0)<4000&&(value.knowledge?.entries?.length||0)<200&&JSON.stringify(value).length<1000000)return value;
     if(!lz)throw Error('资料存储模块尚未加载，请保留当前页面并导出备份。');
-    const metadata=[],words=value.words.map((word,index)=>{const next={...word},extra={};for(const k of [...wordMeta,...(String(word.id).startsWith('study-')?['example']:[])])if(Object.hasOwn(next,k)){extra[k]=next[k];delete next[k];}if(Object.keys(extra).length)metadata.push([index,word.id,extra]);return next;});
+    const metadata=[],progress=[],words=value.words.map((word,index)=>{const next={...word},extra={};for(const k of [...wordMeta,...(String(word.id).startsWith('study-')?['example']:[])])if(Object.hasOwn(next,k)){extra[k]=next[k];delete next[k];}if(Object.keys(extra).length)metadata.push([index,word.id,extra]);let mask=0;const values=[];wordProgress.forEach((k,i)=>{if(Object.hasOwn(next,k)){mask|=1<<i;values.push(next[k]);delete next[k];}});if(mask)progress.push([index,word.id,mask,...values]);return next;});
     const knowledge={...value.knowledge},learning={};for(const key of ['learning','libraryView'])if(Object.hasOwn(knowledge,key)){learning[key]=knowledge[key];delete knowledge[key];}
-    return {...value,words:JSON.stringify(words).length>=1000000?compact(words):words,knowledge:compact(knowledge),studyWordData:compact(metadata),...(Object.keys(learning).length?{studyLearningData:compact(learning)}:{})};
+    return {...value,words:JSON.stringify(words).length>=500000?compact(words,'words'):words,knowledge:compact(knowledge,'knowledge'),studyWordData:compact(metadata,'word-data'),studyWordProgress:compact(progress,'word-progress'),...(Object.keys(learning).length?{studyLearningData:compact(learning,'learning')}:{})};
   }
   function readDb(value){
     if(!value||typeof value!=='object')return value;
-    if(!value.studyWordData&&!value.studyLearningData&&value.knowledge?.encoding!=='lz-string-utf16-v1'&&value.words?.encoding!=='lz-string-utf16-v1')return value;
-    const decodedWords=expand(value.words);
+    if(Object.hasOwn(value,'studyWordProgressChanges')&&!value.studyWordProgress)throw Error('词汇进度缺少原始快照。');
+    if(!value.studyWordData&&!value.studyLearningData&&!value.studyWordProgress&&value.knowledge?.encoding!=='lz-string-utf16-v1'&&value.words?.encoding!=='lz-string-utf16-v1')return value;
+    const decodedWords=expand(value.words,'words');
     if(value.words?.encoding==='lz-string-utf16-v1'&&!Array.isArray(decodedWords))throw Error('压缩词库格式异常，请保留原备份。');
-    const next={...value,knowledge:expand(value.knowledge),words:Array.isArray(decodedWords)?decodedWords.map(w=>({...w})):decodedWords};
-    if(value.studyLearningData){const learning=expand(value.studyLearningData);if(!plain(learning)||Object.keys(learning).some(k=>!['learning','libraryView'].includes(k))||!plain(next.knowledge))throw Error('学习状态附加资料异常');next.knowledge={...next.knowledge,...learning};delete next.studyLearningData;}
-    if(value.studyWordData){const rows=expand(value.studyWordData);if(!Array.isArray(rows)||!Array.isArray(next.words)||rows.length>50000)throw Error('词汇附加资料格式错误。');for(const row of rows){if(!Array.isArray(row)||row.length!==3||!Number.isInteger(row[0])||next.words[row[0]]?.id!==row[1]||!row[2]||typeof row[2]!=='object'||Object.keys(row[2]).some(k=>![...wordMeta,'example'].includes(k)))throw Error('词汇附加资料与原词库不一致。');Object.assign(next.words[row[0]],row[2]);}delete next.studyWordData;}
+    const next={...value,knowledge:expand(value.knowledge,'knowledge'),words:Array.isArray(decodedWords)?decodedWords.map(w=>({...w})):decodedWords};
+    if(value.studyLearningData){const learning=expand(value.studyLearningData,'learning');if(!plain(learning)||Object.keys(learning).some(k=>!['learning','libraryView'].includes(k))||!plain(next.knowledge))throw Error('学习状态附加资料异常');next.knowledge={...next.knowledge,...learning};delete next.studyLearningData;}
+    if(value.studyWordData){const rows=expand(value.studyWordData,'word-data');if(!Array.isArray(rows)||!Array.isArray(next.words)||rows.length>50000)throw Error('词汇附加资料格式错误。');for(const row of rows){if(!Array.isArray(row)||row.length!==3||!Number.isInteger(row[0])||next.words[row[0]]?.id!==row[1]||!row[2]||typeof row[2]!=='object'||Object.keys(row[2]).some(k=>![...wordMeta,'example'].includes(k)))throw Error('词汇附加资料与原词库不一致。');Object.assign(next.words[row[0]],row[2]);}delete next.studyWordData;}
+    if(value.studyWordProgress){applyProgress(next.words,expand(value.studyWordProgress,'word-progress'));delete next.studyWordProgress;}
+    if(Object.hasOwn(value,'studyWordProgressChanges')){applyProgress(next.words,value.studyWordProgressChanges);delete next.studyWordProgressChanges;}
     return next;
   }
-  function readLearningMetadata(value){const source=value?.studyLearningData?expand(value.studyLearningData):expand(value?.knowledge);if(!source)return {};if(!plain(source)||value?.studyLearningData&&Object.keys(source).some(k=>!['learning','libraryView'].includes(k)))throw Error('学习状态附加资料异常');return {...(source.learning!==undefined?{learning:source.learning}:{}),...(source.libraryView!==undefined?{libraryView:source.libraryView}:{})};}
+  function readLearningMetadata(value){const source=value?.studyLearningData?expand(value.studyLearningData,'learning'):expand(value?.knowledge,'knowledge');if(!source)return {};if(!plain(source)||value?.studyLearningData&&Object.keys(source).some(k=>!['learning','libraryView'].includes(k)))throw Error('学习状态附加资料异常');return {...(source.learning!==undefined?{learning:source.learning}:{}),...(source.libraryView!==undefined?{libraryView:source.libraryView}:{})};}
   const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function sources(value){
     const map=new Map();
@@ -169,5 +191,5 @@
     if(other.libraryView&&(!next.libraryView||other.libraryView.updated>=next.libraryView.updated))next.libraryView=other.libraryView;
     return normalizeState(next);
   }
-  return {subjects,fields,escape,entry,sources,normalizeState,readPack,exportPacks,merge,mergeWords,readDb,writeDb,filter,grade,due,learningPhase,markViewed,setFamiliarity,setLibraryView,validateQuiz,checkProgress,saveCheckDraft,submitCheck,mergeLearningMetadata,readLearningMetadata};
+  return {subjects,fields,escape,entry,sources,normalizeState,readPack,exportPacks,merge,mergeWords,readDb,writeDb,writeProgressDb,filter,grade,due,learningPhase,markViewed,setFamiliarity,setLibraryView,validateQuiz,checkProgress,saveCheckDraft,submitCheck,mergeLearningMetadata,readLearningMetadata};
 });

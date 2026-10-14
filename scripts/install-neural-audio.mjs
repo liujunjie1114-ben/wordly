@@ -28,7 +28,7 @@ html=html.replace(/const AUDIO_PACK=\{[^\n]+\};/,'const AUDIO_PACK='+JSON.string
   .replace("playbackStatus('播放完成 · '+n+'次');","playbackStatus('播放完成 · '+n+'次 · '+(usePacked?'Kokoro 英式语音':'设备英语语音'));")
   .replace("?'发音已就绪'","?'Kokoro 英式发音已就绪'")
   .replaceAll('内置807词汇和例句使用固定英式合成音频。','内置807词汇和例句使用固定 Kokoro 英式神经语音。')
-  .replace('807词条与已收录例句使用 Piper en_GB-cori-medium 合成英式英语音频。模型发布于 rhasspy/piper-voices，训练录音来自 LibriVox 公共领域材料。音频仅为合成学习参考，非原书配套录音；多音词与疑似错误条目仍需语境核对。新增或修改的个人例句使用设备英语语音。','内置词条和已收录例句使用 Kokoro-82M v1.0 的 bf_emma 英式神经语音，提前生成后直接播放。已反馈词加入固定音素纠正，其他词通过英语发音词典与音素转换生成。音频是合成学习参考，非原书录音；多音词仍需结合语境核对。尚未收录的自定义词汇或个人例句，以及音频加载失败时的备用朗读，使用设备英语语音。')
+  .replace('807词条与已收录例句使用 Piper en_GB-cori-medium 合成英式英语音频。模型发布于 rhasspy/piper-voices，训练录音来自 LibriVox 公共领域材料。音频仅为合成学习参考，非原书配套录音；多音词与疑似错误条目仍需语境核对。新增或修改的个人例句使用设备英语语音。','内置词条和已收录例句使用 Kokoro-82M v1.0 的 bf_emma 英式神经语音，提前生成后直接播放。已反馈词加入固定音素纠正，其他词通过英语发音词典与音素转换生成。音频是合成学习参考，非原书录音；多音词仍需结合语境核对。尚未收录的自定义词汇或个人例句使用设备英语语音，并明确标注来源。内置词条的听写与词汇卡片使用同一份音频；请求失败时提示重试，不自动更换声音。')
   .replace('https://huggingface.co/rhasspy/piper-voices/blob/main/en/en_GB/cori/medium/MODEL_CARD','https://huggingface.co/hexgrad/Kokoro-82M')
   .replace('语音模型与来源说明</a></details>','语音模型与来源说明</a> · <a href="/assets/kokoro-LICENSE.txt" target="_blank" rel="noopener">Apache-2.0 许可</a></details>')
   .replace('if(w)playText(w.en,+db.settings.plays,+db.settings.interval,.8);','if(w)playText(w.en,+db.settings.plays,+db.settings.interval,1);')

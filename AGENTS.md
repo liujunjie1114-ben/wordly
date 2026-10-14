@@ -18,3 +18,5 @@
 - 内置语音使用 Kokoro-82M / bf_emma，本机生成工具为 `scripts/generate-neural-audio.py`，纠正词在 `scripts/pronunciation-overrides.json`；必须完整生成、核对音素和文件散列后运行 `scripts/install-neural-audio.mjs`。新音频使用新散列文件名，禁止覆盖旧散列文件或清理学习数据来刷新音频。未收录文本和备用设备朗读须如实标明，不能声称所有读音均已人工审校。详见 `docs/neural-audio.md`。
 - 老师每日单词任务定义在 `assets/teacher-word-tasks.js`，只发布日期、范围和已导入词项ID，不发布私人词库或答题记录。新日期追加，不替换旧任务ID。答案、首次尝试与复测历史保存在原数据库的 `wordTasks`，随完整备份保留；不自动改动30天计划、旧听写和熟练度。修改模块或任务定义后运行 `node scripts/version-word-tasks.mjs`。
 - 知识点阅读、熟悉程度、检测历史/草稿保存在 `knowledge.learning`，列表筛选及上次位置在 `knowledge.libraryView`；打开只计看过，提交练习才计练过，自评熟悉不代表自动过关。大库用 `studyLearningData` 无损分离压缩元数据，读取时复原到原知识库。自动题在 `assets/knowledge-checks.js`，改题需递增版本、保留旧成绩快照；未配题和待核对内容不得冒充过关。修改后运行 `node scripts/version-study-library.mjs`，验证备份、重复导入及旧学习记录保留；私人答案不得发布到仓库。
+
+- 大库练习快捷保存只用于 updateWordProgress / checkMemoryTyping；先核对 load.lastRaw 后调用 writeProgressDb。新增其他可变字段不得误用此路径，必须保留完整保存。studyWordProgress / studyWordProgressChanges 是同键内的存储格式，完整备份必须还原到词条字段；修改需验证旧格式、损坏保护、多次练习及备份。内置音频不自动回退设备声音。

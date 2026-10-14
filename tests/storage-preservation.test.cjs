@@ -139,9 +139,23 @@ test('compressed large words load, re-save and export as a readable complete bac
   const original=fixture();original.words=Array.from({length:6500},(_,i)=>({id:'private-'+i,en:'word '+i,zh:'我的意思',created:1791330000000+i,appearances:11,correctCount:3,mastered:true,dismissed:false,example:{en:'My edited English example to keep intact '+i,zh:'个人例句'}}));
   const core=require('../assets/study-core.js');original.knowledge=core.normalizeState(null);const stored=core.writeDb(original);assert.equal(stored.words.encoding,'lz-string-utf16-v1');
   const site=app(stored);site.run('save();db=load();downloadBackup(db);');
-  const digest=value=>require('node:crypto').createHash('sha256').update(JSON.stringify(value)).digest('hex');
+  const canonical=value=>Array.isArray(value)?value.map(canonical):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,canonical(value[key])])):value;
+  const digest=value=>require('node:crypto').createHash('sha256').update(JSON.stringify(canonical(value))).digest('hex');
   assert.equal(digest(JSON.parse(site.run('JSON.stringify(db.words)'))),digest(original.words));
   const exported=JSON.parse(await site.downloads[0].text());assert.equal(digest(exported.words),digest(original.words));assert.deepEqual(exported.logs,original.logs);assert.deepEqual(exported.mistakes,original.mistakes);
+});
+
+test('legacy compressed word counters migrate losslessly and damaged split progress blocks overwriting',()=>{
+  const original=fixture();original.words=Array.from({length:4200},(_,i)=>({...original.words[0],id:'legacy-'+i,en:'legacy '+i,zh:'Synthetic definition '.repeat(12).trim()}));
+  const lz=require('../assets/lz-string.js'),core=require('../assets/study-core.js');
+  function pack(value){const raw=JSON.stringify(value);let hash=2166136261;for(let i=0;i<raw.length;i++)hash=Math.imul(hash^raw.charCodeAt(i),16777619);return {encoding:'lz-string-utf16-v1',length:raw.length,checksum:(hash>>>0).toString(16),data:lz.compressToUTF16(raw)};}
+  const legacy={...original,words:pack(original.words),knowledge:pack(core.normalizeState(null))};
+  const site=app(legacy);site.run('save();');assert.ok(site.saved().studyWordProgress);site.run('db=load();');
+  assert.deepEqual(JSON.parse(site.run('JSON.stringify(db.words)')),original.words);
+  for(const key of ['logs','mistakes','daily','review','memoryTyping'])assert.deepEqual(site.saved()[key],original[key]);
+  const damaged=site.saved();damaged.studyWordProgress.data='broken';const broken=app(damaged);
+  assert.equal(broken.run('storageReadFailed'),true);assert.equal(broken.run('save()'),false);
+  assert.deepEqual(broken.saved(),damaged);
 });
 test('old learning records survive loading, saving and another load',()=>{
   const original=fixture(),site=app(original);
