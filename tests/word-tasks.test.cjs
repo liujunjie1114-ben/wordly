@@ -6,11 +6,19 @@ const entries=[{id:'a',status:'ready',en:'rise',zh:'上升'},{id:'b',status:'nee
 test('published assignments contain exact numbered ranges and only references to the private library',()=>{
  const fs=require('node:fs'),vm=require('node:vm'),context={window:{}};
  vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../assets/teacher-word-tasks.js'),'utf8'),context);
- const tasks=context.window.WordlyTeacherTasks;assert.deepEqual(Array.from(tasks,t=>t.items.length),[50,15,255]);
- for(const t of tasks){assert.equal(t.day,'2026-10-13');assert.equal(new Set(t.items.map(i=>i.key)).size,t.items.length);for(const i of t.items)assert.deepEqual(Object.keys(i).sort(),['entryId','key','label']);}
+ const all=context.window.WordlyTeacherTasks,tasks=all.filter(t=>t.day==='2026-10-13');assert.deepEqual(Array.from(tasks,t=>t.items.length),[50,15,255]);
+ assert.equal(new Set(all.map(t=>t.id)).size,all.length);
+ for(const t of all){assert.equal(new Set(t.items.map(i=>i.key)).size,t.items.length);for(const i of t.items)assert.deepEqual(Object.keys(i).sort(),['entryId','key','label']);}
  assert.equal(tasks[0].items[49].key,'r-50');assert.equal(tasks[1].items[14].key,'w-15');
  assert.ok(tasks[2].items.every(i=>/^l-[1-7]-\d+$/.test(i.key)));
  assert.deepEqual(Array.from(tasks[2].items.slice(0,4),i=>i.key),['l-1-1','l-1-10','l-1-19','l-1-28']);
+ const today=all.filter(t=>t.day==='2026-10-14');assert.deepEqual(Array.from(today,t=>t.items.length),[50,6,10,225]);
+ assert.deepEqual(Array.from(today[0].items,i=>i.key),Array.from({length:50},(_,i)=>'r-'+(i+51)));
+ assert.deepEqual(Array.from(today[1].items,i=>i.key),Array.from({length:6},(_,i)=>'w-strong-'+(i+15)));
+ assert.deepEqual(Array.from(today[2].items,i=>i.key),Array.from({length:10},(_,i)=>'w-sprint-'+(i+1)));
+ assert.ok(today[3].items.every(i=>/^l-(8|9|10|11|12|13)-\d+$/.test(i.key)));
+ assert.deepEqual(Array.from(today[3].items.slice(0,4),i=>i.key),['l-8-1','l-8-10','l-8-19','l-8-29']);
+ assert.deepEqual(Array.from(today[3].items.slice(-4),i=>i.key),['l-13-9','l-13-18','l-13-27','l-13-36']);
 });
 test('task resolution keeps teacher order, duplicate numbers and missing or pending rows visible',()=>{
  const rows=core.resolve(task,entries);assert.deepEqual(rows.map(r=>r.key),['r-1','r-2','r-3']);assert.deepEqual(rows.map(r=>r.available),[true,false,false]);
