@@ -20,3 +20,4 @@
 - 知识点阅读、熟悉程度、检测历史/草稿保存在 `knowledge.learning`，列表筛选及上次位置在 `knowledge.libraryView`；打开只计看过，提交练习才计练过，自评熟悉不代表自动过关。大库用 `studyLearningData` 无损分离压缩元数据，读取时复原到原知识库。自动题在 `assets/knowledge-checks.js`，改题需递增版本、保留旧成绩快照；未配题和待核对内容不得冒充过关。修改后运行 `node scripts/version-study-library.mjs`，验证备份、重复导入及旧学习记录保留；私人答案不得发布到仓库。
 
 - 大库练习快捷保存只用于 updateWordProgress / checkMemoryTyping；先核对 load.lastRaw 后调用 writeProgressDb。新增其他可变字段不得误用此路径，必须保留完整保存。studyWordProgress / studyWordProgressChanges 是同键内的存储格式，完整备份必须还原到词条字段；修改需验证旧格式、损坏保护、多次练习及备份。内置音频不自动回退设备声音。
+- 每日任务先学词表为只读浏览，不得自动计正确、熟练或复习完成。来源书架按当前浏览器knowledge.entries.sources分组；原Word/PDF文件及私人文本不得因增加导航公开上传。来源筛选在knowledge.libraryView.source中可选保存，旧备份默认全库；同名不同路径文件必须区分。修改后运行两套任务/资料版本脚本并检查旧记录保留。

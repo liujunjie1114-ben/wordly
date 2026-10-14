@@ -111,7 +111,15 @@
     const imports=state.imports.some(x=>x.id===pack.batch.id)?state.imports:[...state.imports,{id:pack.batch.id,title:pack.batch.title,date:now,added,merged}];
     return {state:{...state,entries,review:state.review,imports},added,merged,pack};
   }
-  function filter(entries,{subject='',kind='',status='',query=''}={}){const q=canonical(query);return entries.filter(e=>(!subject||e.categories.includes(subject))&&(!kind||e.kind===kind)&&(!status||e.status===status)&&(!q||canonical([...fields.map(k=>e[k]),...e.tags,...e.sources.map(s=>s.path+' '+s.locator)].join(' ')).includes(q)));}
+  function sourceCatalog(entries){
+    const books=new Map();
+    for(const e of entries)for(const path of new Set((e.sources||[]).map(s=>s.path).filter(Boolean))){
+      if(!books.has(path)){const name=path.split(/[\\/]/).pop(),ext=(name.match(/\.([^.]+)$/)?.[1]||'').toLowerCase(),type=['doc','docx'].includes(ext)?'Word':ext==='pdf'?'PDF':['ppt','pptx'].includes(ext)?'PPT':['xls','xlsx','csv'].includes(ext)?'表格':'其他';books.set(path,{path,name,type,total:0,words:0,knowledge:0,pending:0});}
+      const book=books.get(path);book.total++;book[e.kind==='vocabulary'?'words':'knowledge']++;if(e.status==='needs-check')book.pending++;
+    }
+    return [...books.values()].sort((a,b)=>a.name.localeCompare(b.name,'zh-CN')||a.path.localeCompare(b.path));
+  }
+  function filter(entries,{subject='',kind='',status='',query='',source=''}={}){const q=canonical(query);return entries.filter(e=>(!source||e.sources.some(s=>s.path===source))&&(!subject||e.categories.includes(subject))&&(!kind||e.kind===kind)&&(!status||e.status===status)&&(!q||canonical([...fields.map(k=>e[k]),...e.tags,...e.sources.map(s=>s.path+' '+s.locator)].join(' ')).includes(q)));}
   function mergeWords(current,raw,now=Date.now()){
     if(!Array.isArray(current))throw Error('原词库格式异常，请先保留备份。');
     const pack=readPack(raw),words=current.map(w=>({...w})),byEnglish=new Map(words.map(w=>[canonical(w.en),w]));
@@ -143,7 +151,7 @@
   function due(entries,review,now=Date.now()){return entries.filter(e=>e.status!=='needs-check'&&(!review[e.id]||review[e.id].due<=now));}
   function normalizeLibraryView(v){
     if(!v||typeof v!=='object'||Array.isArray(v))throw Error('资料列表位置记录异常');
-    return {subject:Object.hasOwn(subjects,v.subject)?v.subject:'',kind:['knowledge','vocabulary'].includes(v.kind)?v.kind:'',status:['ready','needs-check'].includes(v.status)?v.status:'',phase:['unseen','viewed','practiced'].includes(v.phase)?v.phase:'',checkOnly:v.checkOnly===true,query:text(v.query,500),limit:Math.min(20000,Math.max(12,Math.floor(num(v.limit)||12))),lastId:safeId(v.lastId)?v.lastId:'',scroll:Math.min(1000000,num(v.scroll)),updated:num(v.updated)};
+    return {subject:Object.hasOwn(subjects,v.subject)?v.subject:'',kind:['knowledge','vocabulary'].includes(v.kind)?v.kind:'',status:['ready','needs-check'].includes(v.status)?v.status:'',phase:['unseen','viewed','practiced'].includes(v.phase)?v.phase:'',checkOnly:v.checkOnly===true,query:text(v.query,500),limit:Math.min(20000,Math.max(12,Math.floor(num(v.limit)||12))),lastId:safeId(v.lastId)?v.lastId:'',scroll:Math.min(1000000,num(v.scroll)),updated:num(v.updated),...(text(v.source,2000)?{source:text(v.source,2000)}:{})};
   }
   const plain=v=>v&&typeof v==='object'&&!Array.isArray(v);
   function normalizeLearning(value,ids){
@@ -191,5 +199,5 @@
     if(other.libraryView&&(!next.libraryView||other.libraryView.updated>=next.libraryView.updated))next.libraryView=other.libraryView;
     return normalizeState(next);
   }
-  return {subjects,fields,escape,entry,sources,normalizeState,readPack,exportPacks,merge,mergeWords,readDb,writeDb,writeProgressDb,filter,grade,due,learningPhase,markViewed,setFamiliarity,setLibraryView,validateQuiz,checkProgress,saveCheckDraft,submitCheck,mergeLearningMetadata,readLearningMetadata};
+  return {subjects,fields,escape,entry,sources,sourceCatalog,normalizeState,readPack,exportPacks,merge,mergeWords,readDb,writeDb,writeProgressDb,filter,grade,due,learningPhase,markViewed,setFamiliarity,setLibraryView,validateQuiz,checkProgress,saveCheckDraft,submitCheck,mergeLearningMetadata,readLearningMetadata};
 });
