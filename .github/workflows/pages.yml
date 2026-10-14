@@ -34,37 +34,6 @@ jobs:
         with:
           name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
           path: site-pages
-      # Recover the timed-out assignment deployment without touching the live site.
-      - name: Release the stuck October 14 deployment
-        env:
-          WORDLY_PAGES_TOKEN: ${{ github.token }}
-        run: |
-          node --input-type=module <<'JS'
-          const repo = process.env.GITHUB_REPOSITORY;
-          if (repo !== 'liujunjie1114-ben/wordly') throw Error('Unexpected repository');
-          const url = `https://api.github.com/repos/${repo}/pages/deployments/0f9794fb649a2a15d2fd01a89d7824bdacf80b2e`;
-          const headers = {Authorization: `Bearer ${process.env.WORDLY_PAGES_TOKEN}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2026-03-10'};
-          const terminal = new Set(['succeed', 'failed', 'cancelled', 'canceled', 'deployment_cancelled', 'deployment_failed']);
-          async function status() {
-            const response = await fetch(url, {headers});
-            if (response.status === 404) return 'cancelled';
-            if (!response.ok) throw Error(`Pages status HTTP ${response.status}`);
-            return (await response.json()).status;
-          }
-          let current = await status();
-          console.log('Previous assignment deployment:', current);
-          if (!terminal.has(current)) {
-            const response = await fetch(url + '/cancel', {method: 'POST', headers});
-            if (!response.ok && response.status !== 404) throw Error(`Pages cancel HTTP ${response.status}`);
-            for (let attempt = 0; attempt < 12; attempt++) {
-              await new Promise(resolve => setTimeout(resolve, 5000));
-              current = await status();
-              console.log('Previous assignment deployment:', current);
-              if (terminal.has(current)) break;
-            }
-            if (!terminal.has(current)) throw Error('Previous Pages deployment has not released the queue');
-          }
-          JS
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v5
