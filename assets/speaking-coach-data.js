@@ -3,7 +3,7 @@
   const v=(id,title,focus,evidence,outline,notes=[],frame='')=>({id,title,focus,evidence,outline,notes,frame});
   const p=(severity,status,logic,diagnosis,confirmed,suggestions,pending,vocabulary,variants)=>({severity,status,logic,diagnosis,confirmed,suggestions,pending,vocabulary,variants});
   const profiles={
-    'P2-LIBRARY-BORING':p('critical','Critical — Replace Story','claim','安静、不能聊天是图书馆的正常功能，不能充分证明这个地方无聊。旧答案不再作为推荐版本。',[],['可选择缺少内容的商业楼、没有活动的场所；这些只是选材方向。'],['请填写真实去过的替代地点、时间、期待、具体体验和结果。'],['lack of activities','nothing to do','disappointing experience'],[v('replace','Describe a boring place you have been to','证明真实体验缺乏内容，而不是批评学习场所的正常功能。',['原先期待什么','实际缺少什么活动或内容','对你的体验造成什么影响'],['选真实地点','说明原先期待','给出缺少内容的细节','解释体验为何无聊','补充具体场景','回到题目'],['Weak Evidence：旧图书馆证据不足。','先完成真实替代故事，再形成新答案。'])]),
+    'P2-LIBRARY-BORING':p('important','Showroom 新版 · 待复练','claim','2026-10-15 已按要求换成家具展厅：用展品重复、缺少参与和等待场景解释无聊。新版是口语练习稿，尚未经老师复审。',[],['按下方英文、中文和六段记忆版本练习；先记故事路线，再用关键词复述。'],['时间、地点、同行者及购物细节按真实经历替换；不要把练习情境直接当成已确认的个人经历。'],['furniture showroom','compare prices and materials','nothing new to explore','be involved in choosing','different shades of grey',"couldn’t tell them apart"],[v('showroom-20261015','Describe a boring place','说明你在家具展厅的体验为什么无聊。',['逛完后展品重复，没有新内容可探索','没有参与挑选，只能坐着等待','不停看手机，以为很久却只过了五分钟'],['家乡家具展厅，与父母买沙发','学设计，起初有兴趣','父母比较价格材质，自己逛完坐着等','原因一：家具相似，缺少新鲜感','原因二：没有参与，分不清灰色','看时间才过五分钟，回扣无聊'],['此版本由本次对话选定，尚未获得老师复审。','原图书馆稿只保留在下方历史资料中。'])]),
     'P2-LIBRARY-HIGHRISE':p('important','Important — Replace Recommended','claim','“只能学习、很压抑”与 tall building 的关联太弱。建议换成能描述楼层、空间和体验的建筑。',[],['大型 shopping mall；seven floors、restaurants、cinema、shops、entertainment、rooftop、city view at night。'],['商城名称、是否七层、屋顶是否开放、夜景是否亲眼见过，都需用真实经历确认。'],['shopping mall','seven floors','rooftop','city view at night'],[v('mall','Describe a tall building you like or dislike','先说明喜欢或不喜欢，再用建筑空间与体验证明。',['楼层和空间布局','餐饮、影院与商店怎样方便你','若真实体验过，补充屋顶和夜景'],['定位建筑','表达态度','理由一：空间和设施','具体使用场景','理由二：体验或景观','总结态度'],['Retarget Required：不能沿用图书馆无聊的中心。'])]),
     'P2-CHANGED-DECISION':p('important','Important — Simplify','storyline','不必强行串“重要决定”。重点是原决定、改变原因和新决定的差异。',[],['最近开始跑步、停止熬夜、改变日常习惯或学习计划。'],['选择真正改变过的一件小事；确认改变前后的行为和结果。'],['change my mind','reconsider','daily habit','study plan'],[v('habit','Describe a time when you changed a decision','证明决定确实发生了改变。',['原来准备怎么做','什么让你改变想法','后来实际怎么做、结果如何'],['原计划','开始行动','遇到问题','改变原因','新的选择和结果','感受与收获'])]),
     'P2-LOCALNEWS-COMMUNITY':p('good','Good — Expand Details','claim','社区中心故事可用；围绕为什么本地居民感兴趣补充具体设施和活动。',['附近新开社区中心；姐姐告诉你；图书馆、健身房和共享活动空间。'],['newly opened / newly built、community activities、free opening events、one-month free access。'],['免费开幕活动和一个月免费体验属于建议细节，确认真实存在后才写进答案。'],['newly opened','local residents','community activities','free opening events','one-month free access'],[v('news','Describe a piece of local news that people were interested in','证明这则新闻与居民日常生活有关。',['图书馆和健身房满足什么需求','社区活动如何方便居民','若确认属实，再讲免费开放活动'],['直接说明新闻','交代获知方式','介绍已知设施','解释居民需求','补充真实活动细节','说明社区影响'])]),
@@ -34,6 +34,44 @@
       v('special','Describe a time you saved money to buy something special','special：证明这个物品有什么特殊价值。',['真实材料或工艺','独特设计或功能','个人情感意义'],['定位真实物品','说明特殊之处','具体设计或工艺证据','存钱与购买过程','情感或使用结果','回扣特殊价值'],['Weak Evidence：不能用 expensive 替代 special。'],'The item was special to me because [real feature or meaning], rather than simply because it was expensive. For example, [specific evidence].')
     ]),
     'P2-SPORTS-EVENT':p('important','Important — Expand Professional Details','storyline','本节新增羽毛球单打逆转故事。通过局势、调整和具体动作，让 resilience 有证据。',['羽毛球单打；喜欢的选手首局很快输掉，第二局仍落后；对手接近赛点，教练调整，选手稳住情绪、改变战术，追到势均力敌并逆转，全场欢呼。'],['可核实具体的防守、进攻或击球动作；不为了堆术语虚构比赛细节。'],['真实观看时间、地点、选手、同行者、现场或转播方式仍需填写。'],['singles match','match point','tactics','defense','aggressive attacking style','cross-court smash','lift','net kill','elite player','neck and neck','arena','the whole arena erupted','on the edge of my seat','sportsmanship','resilience','mental strength','make an incredible comeback'],[v('badminton','Describe an experience of watching a sports event','讲清比赛的转折与逆转，并用过程支撑收获。',['首局迅速失利、第二局落后','接近赛点时的情绪与战术调整','追分、逆转和全场反应'],['喜欢的选手与观看背景','首局状态差并输掉','第二局仍落后、对手接近赛点','教练调整、稳定情绪和改变战术','逐渐追分、neck and neck、comeback','全场欢呼与 resilience 的收获'],['the first game / the second game，不用 round 1 / round 2。','singles match，不用 single match。'],'I watched a badminton singles match [when / where / how]. The player I supported lost the first game quickly. In the second game, [confirmed match-point detail]. After [real adjustment], the player changed tactics and made an incredible comeback. [Describe the real crowd reaction.] This showed me [your own reflection].')])
+  };
+  // Current practice revision overlays the immutable 2026-10-07 source archive.
+  profiles['P2-LIBRARY-BORING'].material={
+    date:'2026-10-15',title:'无聊的地方 · 家具展厅',cluster:'SHOWROOM',clusterLabel:'家具展厅',
+    keywords:'showroom / parents + new sofa / study design / compare + wait / similar + not involved / phone + five minutes',
+    story:'陪父母买沙发 → 起初因学设计而感兴趣 → 逛完坐着等 → 家具相似 → 没有参与挑选 → 看手机才过五分钟。',
+    tags:'家具展厅，showroom，无聊的地方，购物，记忆版本',
+    related:'Boring place / Shopping experience（换题后重选中心与结尾）',
+    answer:`I’d like to talk about a furniture showroom in a shopping centre in my hometown. I went there with my parents last summer because they wanted to buy a new sofa for our living room.
+
+The showroom was quite large, with sofas, tables and beds arranged like rooms in a real home. At first, I enjoyed looking around because I study design, and some of the furniture looked quite nice.
+
+However, after about twenty minutes, I started to get bored. My parents were comparing different sofas and asking the salesperson about prices and materials. I walked around, sat on a few chairs, and eventually stayed on one sofa while I waited for them.
+
+There were two main reasons why I found the place boring. First, most of the displays looked very similar. Once I’d walked around the whole showroom, there was nothing new to explore. I would have enjoyed seeing how the furniture was made, but there were only finished products.
+
+The second reason was that I wasn’t really involved in choosing the sofa. My parents were discussing small differences between several shades of grey, and I honestly couldn’t tell them apart. I remember checking the time on my phone and being surprised that only five minutes had passed.
+
+So, although my parents found the visit useful, I felt there was very little for me to do. I wouldn’t choose to spend another afternoon there.`,
+    answerZh:`我想讲的是我家乡一家购物中心里的家具展厅。去年夏天，我陪父母去那里，因为他们想给客厅买一张新沙发。
+
+展厅挺大的，里面摆着各种沙发、桌子和床，有些区域还布置得像真正的房间。一开始，我还挺感兴趣的，因为我学设计，而且有些家具看起来确实不错。
+
+但大约二十分钟后，我就开始觉得无聊了。父母一直在比较不同的沙发，还向销售人员询问价格和材质。我四处走走，试坐了几把椅子，最后就坐在一张沙发上等他们。
+
+我觉得那里无聊，主要有两个原因。首先，大部分展品看起来都很相似。整个展厅逛完一圈后，就没有什么新东西可探索了。如果能看看这些家具是怎么制作的，我可能会更感兴趣，但那里只有成品。
+
+其次，我也没怎么参与挑选。父母一直在讨论几种深浅不同的灰色，但我实在分不清它们的区别。我记得自己拿出手机看时间，惊讶地发现才过去五分钟。
+
+所以，虽然父母觉得那次购物很有用，但对我来说，实在没什么可做的。我不想再在那里待一个下午了。`,
+    memory:[
+      {title:'① 去哪儿、跟谁',keywords:'hometown / parents / new sofa',en:'I’d like to talk about a furniture showroom in my hometown. I went there with my parents last summer because they wanted to buy a new sofa.',zh:'家乡的家具展厅；去年夏天陪父母买新沙发。'},
+      {title:'② 最初印象',keywords:'large / study design / interested',en:'The showroom was quite large, with lots of sofas, tables and beds. At first, I enjoyed looking around because I study design.',zh:'展厅很大；因为学设计，一开始挺感兴趣。'},
+      {title:'③ 做了什么',keywords:'prices / materials / sit and wait',en:'My parents were comparing prices and materials. I walked around, tried a few chairs, and eventually sat on a sofa to wait for them.',zh:'父母比较价格和材质；自己逛完，坐在沙发上等。'},
+      {title:'④ 原因一',keywords:'similar / nothing new',en:'There were two main reasons why I found it boring. First, most of the furniture looked similar. After walking around the whole showroom, I had nothing new to explore.',zh:'家具相似，逛完一圈就没有新鲜内容。'},
+      {title:'⑤ 原因二',keywords:'not involved / shades of grey',en:'Second, I wasn’t involved in choosing the sofa. My parents spent ages discussing different shades of grey, but I couldn’t tell them apart.',zh:'没有参与挑选；父母讨论不同灰色，自己分不清。'},
+      {title:'⑥ 具体感受',keywords:'phone / five minutes / another afternoon',en:'I kept checking the time on my phone. It felt like an hour, but only five minutes had passed. So I wouldn’t want to spend another afternoon there.',zh:'反复看手机，感觉一小时，其实才五分钟；不想再待一下午。'}
+    ]
   };
   return {date:'2026-10-11',profiles,sourceFile:'speaking-teacher-2026-10-11.md',reference:{id:'REFERENCE-TEACHER-20261011',part:0,kind:'reference',title:'本节课意见 · 题干、证据与串题',file:'speaking-teacher-2026-10-11.html',date:'2026-10-11',status:'ready',statusLabel:'课堂意见',description:'两种答题逻辑、四项证据检查、14 组故事诊断、羽毛球逆转故事及下一课 Part 3 预告。',tags:'老师点评，Storyline，Claim–Evidence，Weak Evidence，Retarget Required'}};
 });

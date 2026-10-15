@@ -13,8 +13,8 @@ test('wording distinguishes future medical careers and the interview viewer role
 test('latest advice supersedes unsafe recommendations without rewriting old answers',()=>{
   const entry=bank.entries.find(e=>e.id==='P2-LIBRARY-BORING');
   const before=JSON.stringify(entry),profile=coach.profileFor(entry);
-  assert.equal(profile.severity,'critical');
-  assert.match(profile.status,/Replace Story/);
+  assert.equal(profile.severity,'important');
+  assert.match(profile.status,/Showroom/);
   assert.match(profile.pending.join(' '),/真实/);
   assert.equal(JSON.stringify(entry),before);
   assert.equal(coach.profiles['P2-MEDICAL-UNCLE'].variants.length,2);
@@ -45,8 +45,31 @@ test('checks are isolated by question and version and never imply an exam score'
   assert.equal(existing['medical--future'],undefined);
   assert.equal(coach.checklist.length,8);
   const stats=coach.summary(bank.entries,two,'2026-10-11');
-  assert.deepEqual([stats.total,stats.good,stats.important,stats.critical,stats.unreviewed],[20,6,5,4,5]);
+  assert.deepEqual([stats.total,stats.good,stats.important,stats.critical,stats.unreviewed],[20,6,6,3,5]);
   assert.equal(stats.examScore,undefined);
+});
+
+test('showroom is the current searchable answer while the library source and old reviews remain intact',()=>{
+  const library=require('../assets/speaking-library.js');
+  const original=bank.entries.find(e=>e.id==='P2-LIBRARY-BORING');
+  const entry=library.builtins.find(e=>e.id===original.id);
+  assert.match(original.answer,/library at my university/);
+  assert.match(entry.answer,/furniture showroom/);
+  assert.equal(entry.cluster,'SHOWROOM');
+  assert.ok(library.filterEntries(library.builtins,{query:'showroom',part:2}).some(e=>e.id===original.id));
+  const profile=coach.profileFor(entry),variant=coach.variantFor(entry);
+  assert.equal(variant.id,'showroom-20261015');
+  assert.match(profile.material.answerZh,/家具展厅/);
+  assert.equal(profile.material.memory.length,6);
+  const html=coach.detailMarkup(entry);
+  assert.ok(html.includes(coach.escape(entry.answer)));
+  assert.match(html,/中文版本/);
+  assert.match(html,/记忆版本/);
+  assert.match(html,/2026-10-15/);
+  assert.doesNotMatch(html,/当前没有可直接替换/);
+  assert.notEqual(coach.reviewKey(entry,variant),entry.id+'--replace');
+  const saved=coach.saveAssessment({[entry.id+'--replace']:{proof:'旧自查',checks:[true],updated:1}},coach.reviewKey(entry,variant),{proof:'新自查',updated:2});
+  assert.equal(saved[entry.id+'--replace'].proof,'旧自查');
 });
 test('every Part 2 receives all four evidence questions; old personal records remain usable',()=>{
   for(const e of bank.entries.filter(e=>e.part===2)){
