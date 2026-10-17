@@ -15,7 +15,7 @@
   const originalCourse=builtins[0];
   if(storybank.length)builtins.splice(0,1,...storybank.map(e=>e.id===originalCourse.id?{...originalCourse,...e,cue:originalCourse.cue}:e));
   for(let i=0;i<builtins.length;i++)builtins[i]=coach.decorate(builtins[i]);
-  builtins.push(coach.reference);
+  builtins.push(coach.reference,coach.rhythm.entry);
   const fields=[
     ['title','题目名称',200,'例如：一门让我印象深刻的课程','input'],
     ['cue','题卡／问题',4000,'写下英文题卡或这次练习的问题。'],
@@ -87,7 +87,7 @@
   function resultsMarkup(){const shown=filterEntries(entries(),{part,query,cluster,status:statusFilter,source:sourceFilter});return shown.length?shown.slice(0,limit).map(card).join('')+(shown.length>limit?`<div class="material-more"><span>已显示 ${Math.min(limit,shown.length)} / ${shown.length} 份</span><button class="btn light small" data-material-more>再显示 12 份${icon('arrow')}</button></div>`:''):'<div class="panel material-empty"><h2>这里还没有整理</h2><p>换一个筛选条件，或新增这一类的练习。</p><button class="btn light small" data-material-new>新增练习整理</button></div>';}
   function detailMarkup(entry){
     const header=`<div class="material-detail-nav"><button class="btn light small" data-material-list>← 返回整理库</button><span>${entry.part?'PART '+entry.part:'方法与地图'} · ${entry.builtin?'已收录整理':'我的练习'}</span>${entry.kind==='reference'?'':`<button class="btn small" data-material-edit="${escape(entry.id)}">${entry.builtin?'补充本题':'继续编辑'}</button>`}</div>`;
-    const coaching=entry.part===2?coach.detailMarkup(entry,variantChoices[entry.id],state().review||{}):'';
+    const coaching=(entry.part===2||coach.rhythm.isEntry(entry))?coach.detailMarkup(entry,variantChoices[entry.id],state().review||{}):'';
     if(entry.builtin){const url=new URL(entry.file,assetBase);if(version)url.searchParams.set('v',version);const linked=builtins.filter(e=>e.id!==entry.id&&entry.cluster&&e.cluster===entry.cluster&&e.kind==='part2');return header+coaching+`${entry.part===2?'<details class="coach-archive"><summary>历史整理 · 2026-10-07（保留备查；练习请先看上方本节意见）</summary>':''}<div class="material-reading"><iframe src="${escape(url.href)}" title="${escape(entry.title)}：完整口语整理" class="material-course-frame"></iframe></div>${entry.part===2?'</details>':''}${entry.related||linked.length?`<div class="panel material-related"><h2>同故事题目 · 切换后重选证据</h2><p>${escape(entry.related)}</p><div class="material-linked">${linked.map(e=>`<button class="btn light small" data-material-open="${escape(e.id)}">${escape(e.title)}${icon('arrow')}</button>`).join('')}</div></div>`:''}`;}
     const source=builtins.find(e=>e.id===entry.sourceId);
     return header+coaching+`<article class="panel material-personal-detail"><div class="material-kicker">PART ${entry.part} · ${entry.status==='ready'?'已整理':'待补充'}</div><h1>${escape(entry.title)}</h1>${source?`<button class="material-text-button" data-material-open="${escape(source.id)}">查看原题整理 →</button>`:''}${fields.filter(([key])=>!['title','tags'].includes(key)).map(([key,label])=>`<section><h2>${escape(label)}</h2>${entry[key]?body(entry[key]):'<p class="material-unfilled">尚未填写，可以在“继续编辑”中补充。</p>'}</section>`).join('')}</article>`;
@@ -104,7 +104,7 @@
   }
   function showList(){if(!flushAll())return;mode='list';draw();container?.scrollIntoView({block:'start'});}
   function bindResults(){
-    container.querySelectorAll('#materialResults [data-material-open]').forEach(b=>b.onclick=()=>{selected=b.dataset.materialOpen;mode='detail';draw();container?.scrollIntoView({block:'start'});});
+    container.querySelectorAll('#materialResults [data-material-open]').forEach(b=>b.onclick=()=>{if(!flushAll())return;selected=b.dataset.materialOpen;mode='detail';draw();container?.scrollIntoView({block:'start'});});
     container.querySelectorAll('#materialResults [data-material-new]').forEach(b=>b.onclick=()=>formFor(state().draft||{part:part>=1&&part<=3?part:2}));
     container.querySelector('[data-material-more]')?.addEventListener('click',()=>{limit+=12;container.querySelector('#materialResults').innerHTML=resultsMarkup();bindResults();});
   }
@@ -117,7 +117,7 @@
     container.querySelector('[data-material-resume]')?.addEventListener('click',()=>formFor(state().draft));
     container.querySelector('[data-material-backup]')?.addEventListener('click',()=>config.openBackup());
     container.querySelectorAll('[data-material-list]').forEach(b=>b.onclick=showList);
-    container.querySelectorAll('[data-material-open]').forEach(b=>b.onclick=()=>{selected=b.dataset.materialOpen;mode='detail';draw();container?.scrollIntoView({block:'start'});});
+    container.querySelectorAll('[data-material-open]').forEach(b=>b.onclick=()=>{if(!flushAll())return;selected=b.dataset.materialOpen;mode='detail';draw();container?.scrollIntoView({block:'start'});});
     container.querySelectorAll('[data-material-edit]').forEach(b=>b.onclick=()=>{
       const e=entries().find(e=>e.id===b.dataset.materialEdit),draft=state().draft;
       if(draft){formFor(draft);if(draft.id!==e?.id)config.notify('先保存当前草稿，再开始另一份整理。');return;}

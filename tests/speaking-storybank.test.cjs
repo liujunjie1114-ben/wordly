@@ -48,7 +48,7 @@ test('missing personal details and queued memory questions stay pending and sear
 test('personal practice is independently accessible alongside the larger built-in bank',()=>{
   const entries=[...library.builtins.map(e=>({...e,builtin:true})),{id:'private-kept',part:2,title:'我的旧题',answer:'My own answer.',builtin:false}];
   assert.deepEqual(library.filterEntries(entries,{source:'mine'}).map(e=>e.id),['private-kept']);
-  assert.equal(library.filterEntries(entries,{source:'builtin'}).length,71);
+  assert.equal(library.filterEntries(entries,{source:'builtin'}).length,72);
   const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
   assert.ok(html.indexOf('src="/assets/speaking-storybank.js')<html.indexOf('src="/assets/speaking-library.js'));
 });

@@ -57,3 +57,11 @@ node scripts/build-github-pages.mjs
 - Part 3 五种题型是下一课预告，本次未生成或冒充老师尚未提供的范文。
 
 主要文件：`assets/speaking-coach-data.js` 保存课堂诊断及变体；`assets/speaking-coach.js` 提供证据面板、自查及练习提示；`assets/speaking-teacher-2026-10-11.md` 完整保留课堂记录；`scripts/build-speaking-coach.mjs` 生成原文阅读页。入口、持久化桥接和计时复盘接在原 `index.html` 与 `assets/speaking-library.js` 中。
+
+## 2026-10-08 电影题与节奏复盘
+
+口语整理库顶部新增“电影题与节奏训练”。原文按附件内部日期收录为 `assets/speaking-teacher-2026-10-08.md`，保留全部 15 节；Python 外包装不执行、不发布。构建器生成可下载原文的完整阅读页，目录搜索可用 Movies、Weak Forms、电影、弱读。
+
+`assets/speaking-rhythm.js` 叠加稳定版、升级版、两句强弱标记、三项训练、40/30/20/10 比重及八项回听自查。学习建议不当作官方评分；没有自动语音评分，也不把合成语音称作老师示范。
+
+电影题复测使用独立稳定题目 `LESSON-2026-10-08-MOVIES` 和版本 `rhythm-v1`：30 秒讲述上限，建议实际 20–30 秒，可用原录音/回听/保存/下载。原 Part 2 保持 60 秒准备与 120 秒讲述。八项记录仍保存在原 `speaking.coachReview`，计时草稿与历史仍使用原 `coachChecks`，由题卡 ID 区分检查标准；不新增存储键，不重写旧题目、私人答案和录音。
