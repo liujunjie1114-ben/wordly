@@ -27,14 +27,19 @@ test('classroom links appear on home and listening hubs without writing learning
   const data={knowledge:{entries:[],review:{}},words:[],logs:[],mistakes:{},speaking:{logs:[]},studyPlan:null};
   const before=JSON.stringify(data);dashboard.configure({getDb:()=>data,savePlan:()=>{writes++;return true;}});
   assert.match(dashboard.homeMarkup(),/listening-lesson-2026-10-12.html/);
+  assert.match(dashboard.homeMarkup(),/listening-lesson-2026-10-17.html/);
+  assert.match(dashboard.homeMarkup(),/writing-lesson-2026-10-17.html/);
   assert.match(dashboard.subjectMarkup('listening'),/listening-lesson-2026-10-12.html/);
+  assert.match(dashboard.subjectMarkup('listening'),/listening-lesson-2026-10-17.html/);
+  assert.match(dashboard.subjectMarkup('writing'),/writing-lesson-2026-10-17.html/);
   assert.doesNotMatch(dashboard.subjectMarkup('reading'),/listening-lesson-2026-10-12.html/);
+  assert.doesNotMatch(dashboard.subjectMarkup('reading'),/writing-lesson-2026-10-17.html/);
   assert.match(dashboard.listeningLessonMarkup(),/target="_blank" rel="noopener"/);
   assert.equal(writes,0);assert.equal(JSON.stringify(data),before);
 });
 test('both older lessons retain all sections and use H2 chapter anchors with H3 subsections',async()=>{
   const {renderLesson,lessons}=await import('../scripts/build-listening-lesson.mjs');
-  for(const lesson of lessons.slice(1)){
+  for(const lesson of lessons.filter(item=>['2026-10-07','2026-10-03'].includes(item.date))){
     const source=fs.readFileSync(path.join(__dirname,'../assets/listening-lesson-'+lesson.date+'.md'),'utf8');
     const result=renderLesson(source,lesson);
     assert.deepEqual(result.toc.slice(1).map(h=>h.id),Array.from({length:9},(_,i)=>'section-'+(i+1)));
@@ -45,6 +50,28 @@ test('both older lessons retain all sections and use H2 chapter anchors with H3 
     assert.ok(result.html.includes(lesson.date==='2026-10-07'?'拼写、单复数、字数与单位逐项检查。':'本文件仅作为第一周执行方案。'),'missing ending');
     assert.match(result.html,/<h3>/);
   }
+});
+test('2026-10-17 listening note is complete, linked and excludes personal progress',async()=>{
+  const {renderLesson,lessons}=await import('../scripts/build-listening-lesson.mjs');
+  const lesson=lessons.find(item=>item.date==='2026-10-17');
+  const source=fs.readFileSync(path.join(__dirname,'../assets/listening-lesson-2026-10-17.md'),'utf8');
+  const result=renderLesson(source,lesson);
+  assert.deepEqual(result.toc.slice(1).map(h=>h.id),Array.from({length:6},(_,i)=>'section-'+(i+1)));
+  const html=fs.readFileSync(path.join(__dirname,'../assets/listening-lesson-2026-10-17.html'),'utf8');
+  for(const [,id] of html.matchAll(/href="#([^"]+)"/g))assert.ok(html.includes('id="'+id+'"'),'missing anchor '+id);
+  for(const term of ['Section 1','Section 2','Section 3','Section 4','没有纳入个人作答','ice age','cuttings'])assert.ok(html.includes(term),'missing '+term);
+  assert.doesNotMatch(html,/<script\b|localStorage|indexedDB/);
+});
+test('2026-10-17 writing note opens from the writing hub with matching data',()=>{
+  const html=fs.readFileSync(path.join(__dirname,'../assets/writing-lesson-2026-10-17.html'),'utf8');
+  const source=fs.readFileSync(path.join(__dirname,'../assets/writing-lesson-2026-10-17.md'),'utf8');
+  assert.match(html,/href="\.\.\/#hub-writing"/);
+  for(const [,id] of html.matchAll(/href="#([^"]+)"/g))assert.ok(html.includes('id="'+id+'"'),'missing writing anchor '+id);
+  for(const term of ['4,740','6,475','1,607','126','180','70%','more than tripled']){
+    assert.ok(html.includes(term),'missing from page '+term);
+    assert.ok(source.includes(term),'missing from Markdown '+term);
+  }
+  assert.doesNotMatch(html,/2026-10-17-%E9%9B%85%E6%80%9D%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0|localStorage|indexedDB|<script\b/);
 });
 test('archive, all reading pages and dashboard link to every lesson using static paths',async()=>{
   const {lessons}=await import('../scripts/build-listening-lesson.mjs');
