@@ -28,9 +28,11 @@ test('classroom links appear on home and listening hubs without writing learning
   const before=JSON.stringify(data);dashboard.configure({getDb:()=>data,savePlan:()=>{writes++;return true;}});
   assert.match(dashboard.homeMarkup(),/listening-lesson-2026-10-12.html/);
   assert.match(dashboard.homeMarkup(),/listening-lesson-2026-10-17.html/);
+  assert.match(dashboard.homeMarkup(),/listening-lesson-2026-10-18.html/);
   assert.match(dashboard.homeMarkup(),/writing-lesson-2026-10-17.html/);
   assert.match(dashboard.subjectMarkup('listening'),/listening-lesson-2026-10-12.html/);
   assert.match(dashboard.subjectMarkup('listening'),/listening-lesson-2026-10-17.html/);
+  assert.match(dashboard.subjectMarkup('listening'),/listening-lesson-2026-10-18.html/);
   assert.match(dashboard.subjectMarkup('writing'),/writing-lesson-2026-10-17.html/);
   assert.doesNotMatch(dashboard.subjectMarkup('reading'),/listening-lesson-2026-10-12.html/);
   assert.doesNotMatch(dashboard.subjectMarkup('reading'),/writing-lesson-2026-10-17.html/);
@@ -60,6 +62,19 @@ test('2026-10-17 listening note is complete, linked and excludes personal progre
   const html=fs.readFileSync(path.join(__dirname,'../assets/listening-lesson-2026-10-17.html'),'utf8');
   for(const [,id] of html.matchAll(/href="#([^"]+)"/g))assert.ok(html.includes('id="'+id+'"'),'missing anchor '+id);
   for(const term of ['Section 1','Section 2','Section 3','Section 4','没有纳入个人作答','ice age','cuttings'])assert.ok(html.includes(term),'missing '+term);
+  assert.doesNotMatch(html,/<script\b|localStorage|indexedDB/);
+});
+test('2026-10-18 lesson includes both Section 4 exercises, review methods and no personal results',async()=>{
+  const {renderLesson,lessons}=await import('../scripts/build-listening-lesson.mjs');
+  const lesson=lessons.find(item=>item.date==='2026-10-18');
+  const source=fs.readFileSync(path.join(__dirname,'../assets/listening-lesson-2026-10-18.md'),'utf8');
+  const result=renderLesson(source,lesson);
+  assert.deepEqual(result.toc.slice(1).map(h=>h.id),Array.from({length:6},(_,i)=>'section-'+(i+1)));
+  const html=fs.readFileSync(path.join(__dirname,'../assets/listening-lesson-2026-10-18.html'),'utf8');
+  for(const [,id] of html.matchAll(/href="#([^"]+)"/g))assert.ok(html.includes('id="'+id+'"'),'missing anchor '+id);
+  for(const term of ['Job Satisfaction Study','Researching the Origin of Medieval Manuscripts','inconclusive','methodology','confidential','parchment','bleached','trade routes','不包含个人作答']){
+    assert.ok(html.includes(term),'missing '+term);
+  }
   assert.doesNotMatch(html,/<script\b|localStorage|indexedDB/);
 });
 test('2026-10-17 writing note opens from the writing hub with matching data',()=>{
