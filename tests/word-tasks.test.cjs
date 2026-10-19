@@ -8,7 +8,7 @@ test('published assignments contain exact numbered ranges and only references to
  vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../assets/teacher-word-tasks.js'),'utf8'),context);
  const all=context.window.WordlyTeacherTasks,tasks=all.filter(t=>t.day==='2026-10-13');assert.deepEqual(Array.from(tasks,t=>t.items.length),[50,15,255]);
  assert.equal(new Set(all.map(t=>t.id)).size,all.length);
- for(const t of all){assert.equal(new Set(t.items.map(i=>i.key)).size,t.items.length);for(const i of t.items)assert.deepEqual(Object.keys(i).sort(),['entryId','key','label']);}
+ for(const t of all){assert.equal(new Set(t.items.map(i=>i.key)).size,t.items.length);for(const i of t.items){assert.ok(i.entryId&&i.key&&i.label);assert.ok(Object.keys(i).every(k=>['entryId','key','label','optional','note'].includes(k)));}}
  assert.equal(tasks[0].items[49].key,'r-50');assert.equal(tasks[1].items[14].key,'w-15');
  assert.ok(tasks[2].items.every(i=>/^l-[1-7]-\d+$/.test(i.key)));
  assert.deepEqual(Array.from(tasks[2].items.slice(0,4),i=>i.key),['l-1-1','l-1-10','l-1-19','l-1-28']);
@@ -19,6 +19,42 @@ test('published assignments contain exact numbered ranges and only references to
  assert.ok(today[3].items.every(i=>/^l-(8|9|10|11|12|13)-\d+$/.test(i.key)));
  assert.deepEqual(Array.from(today[3].items.slice(0,4),i=>i.key),['l-8-1','l-8-10','l-8-19','l-8-29']);
  assert.deepEqual(Array.from(today[3].items.slice(-4),i=>i.key),['l-13-9','l-13-18','l-13-27','l-13-36']);
+});
+test('October 16 and 19 assignments follow the supplied ranges; review days reuse October 16 progress',()=>{
+ const fs=require('node:fs'),vm=require('node:vm'),context={window:{}};
+ vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../assets/teacher-word-tasks.js'),'utf8'),context);
+ const all=context.window.WordlyTeacherTasks;
+ const on16=all.filter(t=>t.day==='2026-10-16'),on19=all.filter(t=>t.day==='2026-10-19');
+ assert.deepEqual(Array.from(on16,t=>t.items.length),[50,15,256]);
+ assert.deepEqual(Array.from(on19,t=>t.items.length),[50,15,246]);
+ assert.equal(on16[0].items[0].key,'r-151');assert.equal(on16[0].items.at(-1).key,'r-200');
+ assert.equal(on16[1].items[0].key,'w-crime-strong-6');assert.equal(on16[1].items.at(-1).key,'w-crime-strong-20');
+ assert.equal(on19[0].items[0].key,'r-201');assert.equal(on19[0].items.at(-1).key,'r-250');
+ assert.equal(on19[1].items[0].key,'w-crime-sprint-1');assert.equal(on19[1].items.at(-1).key,'w-crime-sprint-15');
+ assert.deepEqual(JSON.parse(JSON.stringify(context.window.WordlyTeacherReviewDays)),{'2026-10-17':'2026-10-16','2026-10-18':'2026-10-16'});
+ assert.deepEqual(Array.from(on19,t=>t.items.filter(i=>i.optional).length),[1,0,1]);
+ assert.ok(on16.concat(on19).every(t=>t.track==='oct16-19'));
+ assert.doesNotMatch(fs.readFileSync(require('node:path').join(__dirname,'../assets/teacher-word-tasks.js'),'utf8'),/"(?:en|zh|example|answer)"\s*:/);
+});
+test('the next batch and task advance only after required answers pass',()=>{
+ const first={id:'batch-one',day:'2026-10-16',track:'oct16-19',items:Array.from({length:25},(_,i)=>({key:'item-'+i,entryId:'entry-'+i}))};
+ const second={id:'batch-two',day:'2026-10-19',track:'oct16-19',items:[{key:'last',entryId:'entry-25'}]};
+ const library=Array.from({length:26},(_,i)=>({id:'entry-'+i,status:'ready',en:'word'+i,zh:'词'+i}));
+ const all=[first,second];let state={tasks:{}};
+ assert.equal(core.nextTrackTask('2026-10-18',all,state,library).id,first.id);
+ assert.equal(core.queue(first,state,library).slice(0,20).length,20);
+ for(let i=0;i<20;i++)state=core.record(state,first,'item-'+i,{entered:'词'+i,correct:true,judgement:'self',at:i+1});
+ assert.equal(core.nextPage(first,state,library),1);
+ assert.deepEqual(core.queue(first,state,library).map(r=>r.key),['item-20','item-21','item-22','item-23','item-24']);
+ for(let i=20;i<25;i++)state=core.record(state,first,'item-'+i,{entered:'词'+i,correct:true,judgement:'self',at:i+1});
+ assert.equal(core.nextTrackTask('2026-10-18',all,state,library),null);
+ assert.equal(core.nextTrackTask('2026-10-19',all,state,library).id,second.id);
+ const pending={...second,items:[...second.items,{key:'unverified',entryId:'missing',optional:true}]};
+ assert.equal(core.summary(pending,state,library).total,1);
+ assert.equal(core.summary(pending,state,library).skipped,1);
+ state=core.record(state,pending,'last',{entered:'词25',correct:true,judgement:'self',at:26});
+ assert.equal(core.summary(pending,state,library).complete,true);
+ assert.deepEqual(core.queue(pending,state,library,'all').map(r=>r.key),['last']);
 });
 test('task resolution keeps teacher order, duplicate numbers and missing or pending rows visible',()=>{
  const rows=core.resolve(task,entries);assert.deepEqual(rows.map(r=>r.key),['r-1','r-2','r-3']);assert.deepEqual(rows.map(r=>r.available),[true,false,false]);
