@@ -37,3 +37,18 @@ for (const entry of fs.readdirSync(path.join(root, 'assets'), { withFileTypes: t
 }
 fs.writeFileSync(path.join(output, '.nojekyll'), '');
 console.log(JSON.stringify({ output, assetReferences: references.length, originalSourceUnchanged: true }));
+
+const plannerRoot = path.join(root, 'daily-plan');
+const plannerOutput = path.join(output, 'daily-plan');
+const plannerFiles = ['index.html', 'app.js', 'styles.css', '模板配置.js', 'icon.svg', 'README.md'];
+fs.mkdirSync(plannerOutput, { recursive: true });
+for (const name of plannerFiles) {
+  const source = path.join(plannerRoot, name);
+  if (!fs.existsSync(source) || !fs.statSync(source).isFile() || !fs.statSync(source).size) {
+    throw new Error(`Missing planner resource: ${name}`);
+  }
+  if (name.endsWith('.js')) new vm.Script(fs.readFileSync(source, 'utf8'), {filename: 'daily-plan/' + name});
+  fs.copyFileSync(source, path.join(plannerOutput, name));
+}
+console.log(JSON.stringify({plannerFiles: plannerFiles.length}));
+

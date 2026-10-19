@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f5f5ef">
+  <title>今日有序 · 每日学习清单</title>
+  <link rel="icon" href="icon.svg">
+  <link rel="stylesheet" href="styles.css">
+  <script src="模板配置.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="#" id="brandHome" aria-label="回到今天"><span class="brand-icon" aria-hidden="true">✓</span><span><span id="brandName">今日有序</span><small>ONE DAY AT A TIME</small></span></a>
+    <div class="side-label">我的学习空间</div>
+    <button class="nav-item selected" id="todayNav"><span aria-hidden="true">▦</span> 每日清单 <span class="nav-dot"></span></button>
+    <section class="exam-card">
+      <div class="eyebrow"><span id="goalLabel">我的目标 · 倒计时</span></div>
+      <div class="countdown"><strong id="daysLeft">—</strong><span id="countdownUnit">天</span></div>
+      <div class="exam-bottom"><span id="examLabel">目标日期</span><button id="editExam" class="text-button">修改日期</button></div>
+    </section>
+    <section class="week-card">
+      <div class="side-label">最近七天 <span class="muted">完成情况</span></div>
+      <div id="weekStrip" class="week-strip"></div>
+      <p class="small muted">每天的勾选独立保存，点日期可以回看。</p>
+    </section>
+    <button class="nav-item template-nav" id="editTemplate">✎ 修改任务</button>
+    <div class="sidebar-bottom">
+      <div class="save-status" id="saveStatus" role="status"><span></span> 记录自动保存在这台电脑</div>
+      <div class="backup-actions"><button id="exportData">导出备份</button><button id="importData">导入备份</button></div>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+      <p class="small muted">个人记录 · 当前浏览器保存</p>
+    </div>
+  </aside>
+
+  <main>
+    <header class="topbar"><span>把今天，一件件做好。</span><div class="date-controls"><button id="previousDate" class="icon-button" aria-label="前一天">‹</button><label class="date-picker"><input type="date" id="selectedDate" aria-label="选择查看日期"></label><button id="nextDate" class="icon-button" aria-label="后一天">›</button><button id="backToday" class="plain-button">今天</button></div></header>
+    <section class="heading-row"><div><div class="eyebrow" id="dateHeading"></div><h1 id="mainHeading">今天，稳稳向前。</h1><p class="intro" id="dayIntro">清楚下一步，完成一件，再做一件。</p></div><button class="add-button" id="addTask">＋ 添加事项</button></section>
+    <section class="progress-panel" aria-label="当日进度"><div class="progress-copy"><span id="progressMessage">今天的进度，从第一件开始</span><div><strong id="completedCount">0</strong><span id="totalCount"> / 12 项</span></div></div><div class="progress-track" role="progressbar" aria-label="当日任务完成度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBar"><div id="progressFill"></div></div><div class="progress-footer"><span id="remainingLabel">还有 12 件待完成</span><span id="percentLabel">0%</span></div></section>
+
+    <section class="plan-banner" id="planBanner" hidden aria-label="根据复盘调整的计划"><div class="eyebrow">根据你的复盘调整</div><h2 id="planHeadline"></h2><p id="planAnalysis"></p><ul id="planAdjustments"></ul></section>
+    <div class="workspace">
+      <section class="checklist-column" aria-label="每日任务">
+        <div class="list-toolbar"><h2>每日清单 <span id="listCount"></span></h2><div class="filters" role="group" aria-label="筛选事项"><button class="active" data-filter="all" aria-pressed="true">全部</button><button data-filter="pending" aria-pressed="false">未完成</button><button data-filter="done" aria-pressed="false">已完成</button></div></div>
+        <div id="taskList"></div>
+        <div id="emptyState" class="empty-state" hidden></div>
+        <div class="day-end"><span aria-hidden="true">☾</span><div><strong id="endTitle">给休息留点位置。</strong><p id="endHint"></p></div></div>
+      </section>
+      <aside class="right-column">
+        <section class="project-card"><div class="eyebrow" id="focusSlot">核心任务时段</div><div class="project-title"><h2 id="focusName">核心任务</h2><span id="focusDurationTag">60 MIN</span></div><p id="focusCategory">每天推进一个具体成果</p><label for="projectGoal">今天要留下什么成果？</label><textarea id="projectGoal" rows="3" placeholder="例如：完成一页草图、一组练习，或一个具体成果。"></textarea><div class="timer-display" id="timerDisplay" aria-label="专注剩余时间">60<span>:</span>00</div><div class="timer-controls"><button id="timerToggle" class="focus-button">开始专注</button><button id="timerReset" class="reset-button" aria-label="重置专注计时">重置</button></div><p class="timer-hint" id="timerHint">先确定成果，再开始专注。</p><label for="projectOutput">今天完成的成果</label><textarea id="projectOutput" rows="2" placeholder="写下完成的页面、图稿或决定，方便明天接着做。"></textarea><p class="small">计时结束后，确认成果再勾选项目任务。</p></section>
+        <section class="next-card"><div class="eyebrow">接下来，可以先做</div><h3 id="nextTaskTitle"></h3><p id="nextTaskHint"></p><button class="text-button" id="jumpNext">定位到这项 <span aria-hidden="true">↗</span></button></section>
+        <section class="reflection-card"><div class="eyebrow">让计划跟着你调整</div><h2>今天有什么想说的？</h2><p class="small muted">下方写复盘并保存，可以交给自己的 AI 助手分析，再调整下一天的任务。</p><button class="plain-button" id="focusReflection">去写复盘 ↓</button></section>
+      </aside>
+    </div>
+    <section class="review-workspace" aria-labelledby="reflectionHeading">
+      <div class="review-heading"><div><div class="eyebrow">你的反馈，是下一天计划的起点</div><h2 id="reflectionHeading">复盘填写区</h2><p>做到哪里、哪里太难、为什么没做、想怎么调整，都可以直接写。</p></div><span class="review-badge" id="reviewBadge">还没有提交</span></div>
+      <label class="sr-only" for="reflection">写下这次想说的话</label><textarea id="reflection" rows="7" maxlength="20000" placeholder="例如：今天练习比预计多用了半小时，核心任务一直在找材料。希望明天先明确一个小成果，少安排一点零碎事情。"></textarea>
+      <div class="review-actions"><div><p class="review-draft-note" id="reviewDraftStatus">输入时保存草稿；点击按钮后正式提交复盘。</p><p class="small muted" id="bridgeStatus" role="status">正在连接本地记录…</p></div><div class="review-button-group"><button class="plain-button" id="exportReview">导出给 AI</button><button class="plain-button" id="importPlan">导入调整方案</button><button class="add-button" id="saveReflection">保存复盘</button></div><input type="file" id="planFile" accept="application/json,.json" hidden></div>
+      <p class="small muted">这是可自由修改的分享模板。记录保存在你当前的浏览器里；其他人看不到你的勾选和复盘。可导出复盘给自己的 AI，再导入调整方案。网页不会自动调用 AI，也不会沿用发布者的定时任务。</p>
+      <div class="review-result" id="reviewResult" hidden><div class="eyebrow">复盘分析</div><p id="reviewSummary"></p><ul id="reviewChanges"></ul><button class="plain-button" id="viewNextPlan">查看调整后的计划 →</button></div>
+      <details class="review-history"><summary>已保存的复盘记录 <span id="reviewHistoryCount"></span></summary><div id="reviewHistory"><p class="small muted">保存后，每次提交都会保留一份记录。</p></div></details>
+    </section>
+    <section class="web-help"><details><summary>怎么把它变成自己的计划？</summary><ol><li>点「修改任务」，替换名称、时段、完成标准，或者新增、移除任务，最后保存设置。</li><li>每日完成后打勾；底部复盘区可以记录每次想说的话，点「保存复盘」。</li><li>需要 AI 协助时，点「导出给 AI」，把文件发给自己的 AI，要求按文件里的格式返回计划 JSON，再点「导入调整方案」。</li><li>「导出备份」会保存完整记录。换设备或清理浏览器前，先导出；本页不提供账号同步。</li></ol><p>手机和电脑的记录分别保存在各自浏览器。分享这个链接，只分享空白模板。</p></details></section><footer>计划可以调整，完成的每一步都算数。<span>今日有序 · 可自定义分享版</span></footer>
+  </main>
+  <dialog id="taskDialog"><form id="taskForm"><div class="dialog-heading"><h2>给这一天加一件事</h2><button type="button" class="icon-button close-dialog" aria-label="关闭">×</button></div><label for="taskTitle">事项名称</label><input id="taskTitle" maxlength="100" required placeholder="例如：完成老师布置的练习"><label for="taskTime">时间或提醒（可选）</label><input id="taskTime" maxlength="50" placeholder="例如：18:00，或晚饭后"><p class="small muted">只添加到当前选中的日期。</p><div class="dialog-actions"><button type="button" class="plain-button close-dialog">取消</button><button type="submit" class="add-button">添加事项</button></div></form></dialog>
+  <dialog id="examDialog"><form id="examForm"><div class="dialog-heading"><h2>目标日期</h2><button type="button" class="icon-button close-dialog" aria-label="关闭">×</button></div><label for="examDateInput">目标完成日</label><input type="date" id="examDateInput" required><p class="small muted">倒计时按今天计算，回看历史时也不会改变。</p><div class="dialog-actions"><button type="button" class="plain-button close-dialog">取消</button><button type="submit" class="add-button">保存日期</button></div></form></dialog>
+  <dialog id="confirmDialog"><div class="dialog-heading"><h2 id="confirmTitle">确认操作</h2></div><p id="confirmMessage"></p><div class="dialog-actions"><button id="confirmCancel" class="plain-button">取消</button><button id="confirmProceed" class="add-button">确认</button></div></dialog>
+  <dialog id="templateDialog" class="template-dialog"><form id="templateForm"><div class="dialog-heading"><h2>修改我的任务</h2><button type="button" class="icon-button close-dialog" aria-label="关闭">×</button></div><p class="small muted">应用到今天和未来日期。过去的清单和完成记录会保留。最多 60 项。</p><div class="editor-settings"><label>清单名称<input id="templateBrand" maxlength="30" required></label><label>倒计时名称<input id="templateGoalLabel" maxlength="60"></label><label>核心任务名称<input id="templateFocus" maxlength="60" required></label><label>专注分钟数<input id="templateMinutes" type="number" min="5" max="240" required></label><label>核心任务时段<input id="templateFocusTime" maxlength="100"></label></div><h3 class="editor-subheading">每天重复的任务</h3><div id="templateTaskRows"></div><button type="button" id="newTemplateTask" class="plain-button">＋ 新增每日任务</button><div class="dialog-actions"><button type="button" id="loadTemplateConfig" class="plain-button">载入配置文件</button><button type="button" class="plain-button close-dialog">取消</button><button type="submit" class="add-button">保存任务设置</button></div></form></dialog>
+  <div class="toast" id="toast" role="status" hidden></div>
+</body>
+</html>
