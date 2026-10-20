@@ -97,3 +97,24 @@ test('returning to the home tab cannot reset an active answer or interrupt its a
  const source=html.match(/^function render\(\).*$/m)[0];
  assert.doesNotThrow(()=>vm.runInNewContext(source+';render();',{window:{WordlyWordTasks:{isPracticing:()=>true,beforeRender(){throw Error('Active task was reset');}}}}));
 });
+test('October 20 shows the requested reading and writing cards with original progress',()=>{
+ const fs=require('node:fs'),vm=require('node:vm'),context={window:{}};
+ vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../assets/teacher-word-tasks.js'),'utf8'),context);
+ const all=context.window.WordlyTeacherTasks;
+ const requested=all.filter(t=>t.displayDays?.includes('2026-10-20'));
+ assert.deepEqual(Array.from(requested,t=>t.subject),['reading','writing']);
+ assert.ok(requested.every(t=>t.day==='2026-10-19'));
+ const library=requested.flatMap(t=>t.items.filter(i=>!i.optional).map(i=>({id:i.entryId,status:'ready',en:i.entryId,zh:'释义'})));
+ let saved={tasks:{}};
+ for(const t of requested)for(const i of t.items.filter(i=>!i.optional))saved=core.record(saved,t,i.key,{entered:'原答案',correct:true,judgement:'self',at:1});
+ const before=JSON.stringify(saved);
+ core.configure({tasks:all,reviewDays:context.window.WordlyTeacherReviewDays,getDb:()=>({wordTasks:saved,knowledge:{entries:library}})});
+ const html=core.markup('2026-10-20');
+ for(const t of requested)assert.ok(html.includes(`data-wt-learn="${t.id}"`));
+ assert.equal((html.match(/<article class="wt-task">/g)||[]).length,2);
+ assert.ok(html.includes('49/49 项最新答对'));
+ assert.ok(html.includes('15/15 项最新答对'));
+ assert.ok(!html.includes('今天没有新增老师范围'));
+ assert.equal(JSON.stringify(saved),before);
+ assert.equal((core.markup('2026-10-19').match(/<article class="wt-task">/g)||[]).length,3);
+});
