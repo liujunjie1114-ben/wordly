@@ -285,3 +285,21 @@ test('nonexistent evidence cannot count as completed practice',()=>{
   assert.equal(site.run('db.studyPlan'),null);
 });
 
+test('the teacher timetable preserves old results and future-day answers through backup and reload',async()=>{
+  const core=require('../assets/word-tasks.js'),context={window:{}};
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../assets/teacher-word-tasks.js'),'utf8'),context);
+  const published=context.window,original=fixture();let progress={tasks:{}};
+  for(const day of ['2026-10-19','2026-10-20','2026-11-20']){
+    const task=published.WordlyTeacherTasks.find(t=>t.day===day&&t.subject==='reading');
+    progress=core.record(progress,task,task.items[0].key,{entered:'首次原答案',correct:false,judgement:'self',at:1});
+    progress=core.record(progress,task,task.items[0].key,{entered:'复测通过',correct:true,judgement:'self',at:2});
+  }
+  original.wordTasks=progress;const site=app(original);
+  core.configure({tasks:published.WordlyTeacherTasks,plan:published.WordlyTeacherPlan,reviewDays:published.WordlyTeacherReviewDays,getDb:()=>original});
+  for(const day of published.WordlyTeacherPlan)core.markup(day.day);
+  site.run('save();db=load();downloadBackup(db);');
+  assert.deepEqual(site.saved().wordTasks,progress);
+  assert.deepEqual(JSON.parse(await site.downloads[0].text()).wordTasks,progress);
+  for(const field of ['words','logs','mistakes','daily','review','reading'])assert.deepEqual(site.saved()[field],original[field]);
+});
+

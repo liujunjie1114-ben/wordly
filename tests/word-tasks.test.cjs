@@ -31,7 +31,8 @@ test('October 16 and 19 assignments follow the supplied ranges; review days reus
  assert.equal(on16[1].items[0].key,'w-crime-strong-6');assert.equal(on16[1].items.at(-1).key,'w-crime-strong-20');
  assert.equal(on19[0].items[0].key,'r-201');assert.equal(on19[0].items.at(-1).key,'r-250');
  assert.equal(on19[1].items[0].key,'w-crime-sprint-1');assert.equal(on19[1].items.at(-1).key,'w-crime-sprint-15');
- assert.deepEqual(JSON.parse(JSON.stringify(context.window.WordlyTeacherReviewDays)),{'2026-10-17':'2026-10-16','2026-10-18':'2026-10-16'});
+ assert.deepEqual(Array.from(context.window.WordlyTeacherReviewDays['2026-10-17']),['2026-10-13','2026-10-14','2026-10-15','2026-10-16']);
+ assert.deepEqual(Array.from(context.window.WordlyTeacherReviewDays['2026-10-18']),['2026-10-13','2026-10-14','2026-10-15','2026-10-16']);
  assert.deepEqual(Array.from(on19,t=>t.items.filter(i=>i.optional).length),[1,0,1]);
  assert.ok(on16.concat(on19).every(t=>t.track==='oct16-19'));
  assert.doesNotMatch(fs.readFileSync(require('node:path').join(__dirname,'../assets/teacher-word-tasks.js'),'utf8'),/"(?:en|zh|example|answer)"\s*:/);
@@ -97,24 +98,23 @@ test('returning to the home tab cannot reset an active answer or interrupt its a
  const source=html.match(/^function render\(\).*$/m)[0];
  assert.doesNotThrow(()=>vm.runInNewContext(source+';render();',{window:{WordlyWordTasks:{isPracticing:()=>true,beforeRender(){throw Error('Active task was reset');}}}}));
 });
-test('October 20 shows the requested reading and writing cards with original progress',()=>{
+test('the full timetable keeps October 19 progress when October 20 gets its own assignments',()=>{
  const fs=require('node:fs'),vm=require('node:vm'),context={window:{}};
  vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../assets/teacher-word-tasks.js'),'utf8'),context);
  const all=context.window.WordlyTeacherTasks;
- const requested=all.filter(t=>t.displayDays?.includes('2026-10-20'));
- assert.deepEqual(Array.from(requested,t=>t.subject),['reading','writing']);
- assert.ok(requested.every(t=>t.day==='2026-10-19'));
- const library=requested.flatMap(t=>t.items.filter(i=>!i.optional).map(i=>({id:i.entryId,status:'ready',en:i.entryId,zh:'释义'})));
+ const original=all.filter(t=>t.day==='2026-10-19'&&['reading','writing'].includes(t.subject));
+ const library=original.flatMap(t=>t.items.filter(i=>!i.optional).map(i=>({id:i.entryId,status:'ready',en:i.entryId,zh:'释义'})));
  let saved={tasks:{}};
- for(const t of requested)for(const i of t.items.filter(i=>!i.optional))saved=core.record(saved,t,i.key,{entered:'原答案',correct:true,judgement:'self',at:1});
+ for(const t of original)for(const i of t.items.filter(i=>!i.optional))saved=core.record(saved,t,i.key,{entered:'原答案',correct:true,judgement:'self',at:1});
  const before=JSON.stringify(saved);
- core.configure({tasks:all,reviewDays:context.window.WordlyTeacherReviewDays,getDb:()=>({wordTasks:saved,knowledge:{entries:library}})});
- const html=core.markup('2026-10-20');
- for(const t of requested)assert.ok(html.includes(`data-wt-learn="${t.id}"`));
- assert.equal((html.match(/<article class="wt-task">/g)||[]).length,2);
- assert.ok(html.includes('49/49 项最新答对'));
- assert.ok(html.includes('15/15 项最新答对'));
- assert.ok(!html.includes('今天没有新增老师范围'));
+ core.configure({tasks:all,plan:context.window.WordlyTeacherPlan,reviewDays:context.window.WordlyTeacherReviewDays,getDb:()=>({wordTasks:saved,knowledge:{entries:library}})});
+ const on20=core.markup('2026-10-20');
+ assert.ok(on20.includes('data-wt-learn="teacher-2026-10-20-reading"'));
+ assert.ok(!on20.includes('data-wt-learn="teacher-2026-10-19-reading"'));
+ const on19=core.markup('2026-10-19');
+ assert.ok(on19.includes('49/49 项最新答对'));
+ assert.ok(on19.includes('15/15 项最新答对'));
+ for(const day of context.window.WordlyTeacherPlan)core.markup(day.day);
  assert.equal(JSON.stringify(saved),before);
- assert.equal((core.markup('2026-10-19').match(/<article class="wt-task">/g)||[]).length,3);
+ assert.equal((on19.match(/<article class="wt-task">/g)||[]).length,3);
 });
