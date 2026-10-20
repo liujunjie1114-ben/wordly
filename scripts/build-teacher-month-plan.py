@@ -14,6 +14,8 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKS = ROOT / 'private-study/deliverable-v1-20261009'
 manifest = json.loads((PACKS / 'manifest.json').read_text('utf-8'))
 entries = [e for pack in manifest['packs'] for e in json.loads((PACKS / pack['file']).read_text('utf-8'))['entries']]
+chapter6_file=ROOT/'assets/teacher-chapter6-task-items.json'
+chapter6={t['test']:t for t in json.loads(chapter6_file.read_text('utf-8'))['tests']} if chapter6_file.exists() else {}
 lookup = defaultdict(dict)
 pages = defaultdict(dict)
 for e in entries:
@@ -139,7 +141,7 @@ for short,start,ranges,listen in schedule:
         note = '中文→英文默写；并列表达可自评，首次答案和复测历史保留。'
         if any(t=='教育' and hi>=31 for t,s,lo,hi in ranges): note += '教育强化31–40词按第31页顺序对应，原页误重复标为11–20。'
         tasks.append({'id':f'teacher-{day}-writing','day':day,'subject':'writing','title':'写作 · '+'、'.join(f'{t}{s}第{lo}–{hi}词' for t,s,lo,hi in ranges),'mode':'spelling','items':items,'note':note,'track':'oct26-plan','scheduleVersion':1})
-    items,labels,resource_ids,pending = [],[],[],False
+    items,labels,resource_ids,pending,audio_refs = [],[],[],False,[]
     for scope in listen:
         if isinstance(scope,tuple):
             ch,lo,hi,label = scope
@@ -149,12 +151,19 @@ for short,start,ranges,listen in schedule:
             if name == '专业': items.extend(listening(8,21,22,'Chapter 8 · 专业'))
             if name in knowledge: resource_ids.append(knowledge[name])
         else:
-            labels.append(scope);pending=True
+            labels.append(scope)
+            bounds=[int(n) for n in re.findall(r'\d+',scope.split('Test ')[1])]
+            for test in range(bounds[0],bounds[-1]+1):
+                if test not in chapter6:
+                    pending=True
+                else:
+                    items.extend(chapter6[test]['items'])
+                    audio_refs.append({'chapter':6,'test':test,'fileName':chapter6[test]['fileName']})
     note = '按老师安排范围和原表横向行列顺序练习；逐词发音用于词汇检测，老师原声横向测试需选择本机音频。'
     if pending: note += 'Chapter 6原压缩包只有未下载完成的音频，没有可用词表，待补资料；本卡不代表该范围已完成。'
     if resource_ids: note += '数字、字符、钱数、地址、日期按专项讲解结合教材原声练习，不用普通单词拼写成绩冒充专项过关。'
     if pending and items: items.append({'key':'pending-chapter6','entryId':'missing-chapter6-source','label':'Chapter 6原词表待补齐','note':'暂无可用原词表，不能计为整批完成。'})
-    tasks.append({'id':f'teacher-{day}-listening','day':day,'subject':'listening','title':'听力 · '+'、'.join(labels),'mode':'audio','items':items,'note':note,'track':'oct26-plan','scheduleVersion':1,'pendingSource':pending,'libraryIds':resource_ids})
+    tasks.append({'id':f'teacher-{day}-listening','day':day,'subject':'listening','title':'听力 · '+'、'.join(labels),'mode':'audio','items':items,'note':note,'track':'oct26-plan','scheduleVersion':1,'pendingSource':pending,'libraryIds':resource_ids,'audioRefs':audio_refs})
 
 tasks.sort(key=lambda t:t['day'])
 plan,review = [],{}

@@ -19,7 +19,7 @@ test('the supplied October class plan covers October 12 through November 22',()=
  assert.equal(tasks.find(t=>t.day==='2026-11-20'&&t.subject==='reading').items.at(-1).key,'r-1450');
  assert.equal(new Set(tasks.map(t=>t.id)).size,tasks.length);
  assert.ok(tasks.every(t=>!t.displayDays));
- assert.ok(tasks.find(t=>t.day==='2026-10-30'&&t.subject==='listening').pendingSource);
+ assert.equal(tasks.find(t=>t.day==='2026-10-30'&&t.subject==='listening').pendingSource,false);
  const on21=tasks.find(t=>t.day==='2026-10-21'&&t.subject==='listening');
  assert.deepEqual(Array.from(on21.items.slice(0,4),i=>i.key),['l-ch4-11-1','l-ch4-11-4','l-ch4-11-7','l-ch4-11-10']);
  assert.deepEqual(Array.from(on21.items.slice(12,15),i=>i.key),['l-ch5-1-1','l-ch5-1-13','l-ch5-1-25']);
