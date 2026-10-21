@@ -132,3 +132,224 @@
 - library 与 extend / prolong 有明确课堂确认；完整英语句子使用规范重构示例，guided tour 标明语言校正。
 - book 对应的原文词、舞台剧分类答案、开头题型比例及部分英文片段待原资料核对。
 - 不保存或发布个人答案、成绩、录音，不调整已有进度、错题、复习队列和计划。
+
+# 11. 同日课程增补：Part 4 连续填空与两套生物学练习
+
+本节补充 Dodo Bird（渡渡鸟）和 Gastropods（腹足类）课堂，独立于前文的动词定位训练。保留原有课程内容，不覆盖既有复盘。资料来自课堂转写与题面截图；未提供完整原始录音时，不把课堂推测伪装成逐字听力原文，也不记录个人答题数据。
+
+**一句话总纲：限制词数 → 词性与语义预判 → 小标题定位 → 抓原词或同义替换 → 核对对象、单复数和拼写 → 立即跟下一题。**
+
+| 解题阶段 | 执行动作 | 课堂实例 |
+|---|---|---|
+| 阅读限制 | 明确 ONE WORD ONLY 或 NO MORE THAN TWO WORDS | 一个词的题绝不能添加多余修饰词 |
+| 判词性 | 从冠词、形容词、动词、并列项判断 | a + 空格 → 单数可数名词；rapid + 空格 → 名词 |
+| 判类别 | 名词还要预测“动物/器官/地点/时间/货物” | shield slug eats ___ → 食物、猎物 |
+| 跟标题 | 听到小标题或概括性信号再移目光 | in terms of their evolution；let's turn now to feeding habits |
+| 识别改写 | 不只等待题干原词 | transporting ↔ carrying；eat ↔ feed on |
+| 排干扰 | 核对被描述的对象与限定条件 | Dutch painting 与 Indian painting 不同 |
+| 落笔 | 拼写、单复数、词数与答案位置都要符合 | spices 不等于 species；hair 可不可数视意义而定 |
+
+# 12. Part 4 听力操作法：审题、跟题、跳题
+
+1. **优先看字数限制**。题目给 NO MORE THAN TWO WORDS 时，可以是一词或两词，不能为了“凑满”填两个词。
+2. **先判空格周围语法，再缩小语义范围**。例如 a ___ 倾向单数可数名词；very ___ 倾向形容词；sense of ___ 倾向感官；ribs、spines、___ 倾向同类结构名词。
+3. **抓标题与讲解过渡词**。Evolution / Form / Feeding habits / Predators / Habitats 一类小标题，是预测录音换主题的路标；录音未必逐字读出标题。
+4. **听力按题号总体顺序推进**，但一题内部题干词序可能变化，且会插入大量背景内容。不能因为没听见某个原词就长期等待。
+5. **题干原词不等于答案**。若已听见 healthy plants，但题目问 live animals 后的具体例子，就继续听，不能过早写 plant。
+6. **but / however / actually / even / also / for example** 是提醒，不是机械答案开关；必须核对转折和例子实际修饰谁。
+7. **当前空错过就前进**。Part 4 通常 31–40 连续播放，纠结一个空会影响后续多个空。
+8. **看题时只写简码**：N-sg（单数名词）、N-pl（复数名词）、ADJ（形容词）、TIME（时间）、PLACE（地点）、ANIMAL（动物）。不必把每句题干翻成中文。
+
+例：The Dutch established a ___ on the island. → a 提醒单数名词；established 提醒“建立”的组织或聚居点；录音 set up a colony，答案 colony。
+
+# 13. Dodo Bird 31–40：逐题定位与答案
+
+| 题号 | 课堂答案 | 预判类型 | 录音与题干的关系 | 防错提醒 |
+|---|---|---|---|---|
+| 31 | **spices** | 货物类复数名词 | transporting ↔ carrying | spices = 香料；species = 物种 |
+| 32 | **colony** | a 后单数名词 | established ↔ set up | colony 是殖民地/聚居点 |
+| 33 | **fat** | very 后形容词 | very ↔ extremely | Dutch painting 与后来提及的 Indian painting 不同 |
+| 34 | **head** | dried 后身体部位名词 | remaining soft tissue ↔ surviving tissue | 不能只因听到 parts 就填写泛指词 |
+| 35 | **movement** | rapid 后名词 | rapid ↔ fast / not slow | rapid movement 整体表达快速移动 |
+| 36 | **balance** | maintain 后名词 | use wings to maintain balance ↔ wings employed for balance | employ = use，不是 maintain |
+| 37 | **brain** | their ___ was：单数名词 | not small but average in size | 否定 small，肯定 average |
+| 38 | **smell** | sense of 后感官名词 | find ↔ locate；well-developed sense of smell | 不要误填 sight |
+| 39 | **rats** | 并列动物，通常复数 | ate ↔ consumed；also brought another creature | 留意 also 后的新动物 |
+| 40 | **forest** | the 后环境名词 | farming ↔ agriculture；destroyed ↔ cut down | forest 的原文词形按题面核对 |
+
+**31 spices / species**：spices（香料，复数）与 species（物种，单复数同形）拼写相近。不能只记住“都是 s 开头”。
+
+**32 colony**：set up a colony 对应 established a colony。establish / set up / found / create / start 在适用语境下可能表示建立，但并非所有语境都完全等价。
+
+**33 fat**：Dutch painting 反映 dodo 非常胖；Indian painting 中提到 thinner，并非推翻同一幅图的结论。转折后先查对象，不机械改答案。
+
+**34 head**：题目要求唯一留存的 soft tissue 对应哪个部位。若听到“four dried parts”等概括信息，继续等待更具体的 head。
+
+**35 movement**：capable of rapid movement 与 capable of movement that was not slow but quite fast 对应。否定 not slow 和肯定 fast 一起给出速度信息。
+
+**36 balance**：be employed for balance 中 employed = used；题干的 maintain balance 是功能性转写。不要背成 employ = maintain。
+
+**37 brain**：平均大小 average in size，并非 small。听到否定时要把整组 not ... but ... 听完。
+
+**38 smell**：sense of smell 能帮助定位成熟水果与食物；locate ↔ find，particularly well-developed 对应感官发达。
+
+**39 rats**：此前出现 dogs、monkeys 一类动物，also 引出新并列动物 rats。consume their eggs 对应 ate the eggs。
+
+**40 forest**：农业 farming / agriculture 的引入导致树林被砍伐 destroyed / cut down；须区分行为动作和结果。
+
+# 14. Dodo 课堂核心替换与词类归纳
+
+| 题干表达 | 录音表达 | 记忆方式 |
+|---|---|---|
+| transporting | carrying | 运输、携带 |
+| establish | set up | 建立 |
+| very | extremely | 程度加强 |
+| remain | survive / be left | 留存 |
+| rapid | fast / not slow | 速度 |
+| use | employ | 使用 |
+| maintain balance | be used for balance | 整句功能替换 |
+| average size | average in size | 相同信息重组 |
+| find | locate | 找到 |
+| eat | consume | 吃、消耗 |
+| arrival | introduction | 到来、引入 |
+| farming | agriculture | 农业 |
+| destroy | cut down | 在树林语境下表示被砍伐 |
+
+**课堂辨析**：skull = 颅骨/头骨；scalp = 头皮；skeleton = 骨架；bone = 骨头；remains（名词）= 遗骸。不能将 scalp 误背为头骨。
+
+**同义替换不是简单一对一**：wings were employed for balance ↔ wings were used to maintain balance；这里 employed 对应 used，整个用途短语才对应 maintain balance。
+
+# 15. Gastropods 主题导入：词汇与标题定位
+
+gastropods = 腹足类；snails = 蜗牛；slugs = 蛞蝓、鼻涕虫；invertebrates = 无脊椎动物；backbone = 脊柱。
+
+录音开头提到其没有脊柱、具有一只 muscular foot（肌肉足），可供游动或行走；足被 mucus（黏液）润滑，留下一条 sticky trail（黏滑痕迹）；radula（齿舌）帮助进食。这些是**主题背景信息**，不因陌生就一定是填空答案。
+
+| 录音提示 | 题目章节或概念 | 操作 |
+|---|---|---|
+| in terms of their evolution | Evolution | 确认话题转入演化 |
+| in terms of their dimensions | Size / Dimensions | dimension 在这里是尺寸 |
+| the snails, not the slugs | Snails only | 只指带壳蜗牛，不包括蛞蝓 |
+| have a shell | Shell / Form | 继续关注壳的形态 |
+| let's turn now to feeding habits | Feeding habits | 切换到食性与吃什么 |
+| for example | e.g. | 紧接着可能出现具体例子 |
+
+dimension(s) 在此约等于 size（大小/尺寸）；示例介绍英国蜗牛壳长度从 1.5 mm 到 50 mm，属于尺寸信息，并不自动回答形态或盘绕方向。
+
+# 16. Gastropods 31–35：做题路径
+
+| 题号 | 课堂核对结果 | 词性与语义 | 关键线索 |
+|---|---|---|---|
+| 31 | **sea**（此前练习核对） | in 后需补地点/环境类名词 | 涉及壳的矿物质与海水的比较；需对照原题全文确认 |
+| 32 | **right** | coil to the 后方向词 | most ↔ majority；coil to the right |
+| 33 | **hair** | ribs / spines 同类并列 | with hair on their shells |
+| 34 | **worms** | shield slug 捕食的动物 | eat ↔ feeds on；for example |
+| 35 | **first century**（课堂提示例） | 时间/世纪 | introduced to Britain ... in the ___；真实音频和答案纸仍需核对 |
+
+**31 的谨慎点**：课堂转写在这一空前存在缺段；此前练习给出 sea，但不把缺失原文伪装成课堂已逐字录下的句子。以完整题面和录音为最终依据。
+
+**32 的同替**：most ↔ majority；coil to the right 说明贝壳多数向右盘绕。不要与 size / dimensions 混在一起。
+
+**33 的并列关系**：regularly spaced ribs（规则分布的棱）、prominent spines（显著的刺状结构），以及 even a number of species with hair on their shells（甚至有些物种壳上有毛状结构）。even 引出额外并列项，而不是要求额外填写数量。
+
+**hair 的数**：表示毛发整体时通常不可数；表示单根、若干根毛发时可以 hairs。此题按录音写 hair，不额外加 s。
+
+**34 的段落顺序**：healthy plants（健康植物）→ rotting plants（腐烂植物）→ fungi（真菌）与 algae（藻类）→ dead animals（死动物）→ carnivorous（食肉性）→ prey on live animals（捕食活物）→ for example, the shield slug feeds on worms（盾蛞蝓吃蠕虫）。题目明确问活的动物例子，因此前面的植物、真菌、藻类和腐肉都只是干扰或背景。
+
+**35 的预判**：题目已经说 Britain（引入地点）和 as food（用途），in the ___ 结合语义更像时间。老师特别提醒答案必须按题目字数要求填写；first century 是课堂举的世纪写法，不凭该例认定所有数字必须用英文单词。
+
+# 17. Feeding habits：食性与并列关系
+
+| 词汇 / 短语 | 中文 | 附带考点 |
+|---|---|---|
+| healthy plants | 健康植物 | 并非 live animals 题的目标 |
+| rotting plants | 腐烂植物 | rot → rotting，双写 t |
+| fungi | 真菌（fungus 的复数） | 拼写需要熟悉 |
+| algae | 藻类（常为复数） | 会听音识义 |
+| dead animals | 死亡动物 | 不能等同捕食活物 |
+| carnivorous | 食肉的 | 表示肉食性，未必只吃活体 |
+| herbivorous | 食草的 | 与 carnivorous 对照 |
+| prey on | 捕食 | 需要对象，常为动物 |
+| feed on | 以……为食 | 也可吃植物、真菌等 |
+| worm / worms | 蠕虫 / 蠕虫复数 | 不应所有 worm 都翻译成蚯蚓 |
+
+**表达精度**：在这道题里 feed on / prey on / eat 通过上下文指向“食用/捕食”，但 prey on 强调捕食，feed on 范围更广，不能当作所有语境下完全可交换的同义词。
+
+关键原句：Some species eat dead animals. And there are some that are actually carnivorous. They prey on live animals. For example, the shield slug feeds on worms.
+
+关键配对：e.g. ↔ for example；shield slug ↔ shield slug（原词重现）；eat ↔ feed on；答案 worms（复数）。
+
+# 18. Gastropods 36–40：后续作业的词性预判
+
+课堂当场完整讲解到 35；36–40 只看到题面照片，因此这一节是**预判，不是答案**。
+
+| 题号 | 题面可见内容 | 预判词类/范围 | 如何继续定位 |
+|---|---|---|---|
+| 36 | many gastropods have particular types of ___; snail makes itself slippery | 名词：分泌物或防御相关机制 | 听 Predators 段，留意黏滑及其作用 |
+| 37 | ___ conditions are worst | 形容词/环境类修饰词 | 找 Habitats 中最差的条件 |
+| 38 | old, natural habitats, e.g. ___ | 地点/环境名词 | e.g. 后的例子 |
+| 39 | blind snail lives entirely below the ___ | the 后名词：地表/环境结构 | below the 后面所指地点 |
+| 40 | indicators of the quality of the ___ | the 后环境名词 | quality of ... 后的对象 |
+
+**重要**：对 36–40 不能把语义猜测直接当正确答案。必须听录音确认单词、拼写与词数。你可以按这五个预判标签先做作业，再对照原文。
+
+# 19. 数字、世纪和答案形式：课堂提示与考试规则区分
+
+老师强调过填世纪时间时的书写要求，并举 first century 为例。可操作的考试方法是：
+
+1. 先阅读题目前面的限制，如 ONE WORD ONLY、NO MORE THAN TWO WORDS、AND/OR A NUMBER。
+2. 日期、世纪、数字能否用阿拉伯数字，取决于实际题目指令和官方答案接受形式；**并不存在所有雅思听力数字都必须写英文单词的通用规则**。
+3. 若例题答案是 first century，它包含两个词；如题目限制只允许一个词，则必须核对原题限制和标准答案，不能生搬硬套。
+4. 注意 one word only = 不能多出第二个词；NO MORE THAN TWO WORDS = 不超过两词，并不是必须写两词。
+5. 单复数取决于句子语法和录音证据；写 animals、worms、spices 等时检查 s，hair 在本题不加 s。
+
+# 20. 高频词汇：一张表集中记
+
+| 英文 | 中文 | 核心提醒 |
+|---|---|---|
+| settlement | 聚落、定居点 | 不等于 rites / ceremony |
+| ceremony / rites | 典礼、仪式 | 仪式类同替 |
+| a number of | 一些、若干、许多 | 后接可数复数名词 |
+| spice / spices | 香料 | 别误写 species |
+| species | 物种 | 单复数同形 |
+| colony | 殖民地、聚居地 | establish ↔ set up |
+| extremely | 极其、非常 | very 同替 |
+| remaining | 剩余的 | remain/survive 词族 |
+| rapid | 快速的 | fast / not slow |
+| movement | 移动、运动 | rapid movement |
+| balance | 平衡 | maintain balance |
+| skeleton / skull / scalp | 骨架 / 头骨 / 头皮 | 三词不可混用 |
+| brain | 大脑 | brain was average in size |
+| sense of smell | 嗅觉 | find ↔ locate |
+| consume | 吃；消耗 | eat 同替 |
+| agriculture | 农业 | farming 同替 |
+| forest | 森林 | cut down = 砍伐 |
+| gastropod | 腹足类 | snail / slug |
+| invertebrate | 无脊椎动物 | without a backbone |
+| muscular foot | 肌肉足 | 腹足类运动结构 |
+| mucus | 黏液 | sticky trail |
+| radula | 齿舌 | feeding organ |
+| dimension | 尺寸、维度 | 该语境是 size |
+| coil | 盘绕 | coil to the right |
+| ribs / spines / hair | 棱 / 刺状结构 / 毛状结构 | shell 表面并列特征 |
+| rotting | 腐烂的 | rot 双写 t 加 ing |
+| fungi / algae | 真菌 / 藻类 | 注意发音与语义 |
+| carnivorous / herbivorous | 食肉的 / 食草的 | 前者不必然只吃活物 |
+| prey on / feed on | 捕食 / 以……为食 | 语义相关而不总等价 |
+| worms | 蠕虫（复数） | 34 答案 |
+| predator / habitat | 捕食者 / 栖息地 | 后续小标题 |
+| first century | 公元1世纪 | 时间表达，受题目字数限制约束 |
+
+# 21. 课后训练：从“听过”到“会做”
+
+**第一轮（约 15 分钟）— 闭卷复现**：默写 Dodo 31–40 答案，每题在右边标词性和至少一组同替。不要只抄答案表。
+
+**第二轮（约 15 分钟）— Gastropods 跟题**：重听 31–35；听到 Evolution、Form、Feeding habits 时立刻眼睛转到对应题；34 必须完整解释为什么 healthy plants、fungi、algae、dead animals 都不填。
+
+**第三轮（约 10 分钟）— 词汇听辨**：spices / species；skull / scalp；fungi / algae；carnivorous / herbivorous；right / size。要求不仅认中文，还能拼写被要求书写的词。
+
+**第四轮（约 10 分钟）— 未讲作业**：对 36–40 先标词类，再听录音取证；填写后逐题记录“原词、同替、干扰、词形”四项。不使用 36–40 的猜测作为答案。
+
+**错题卡模板**：题号｜题干空前后｜预测词性/类别｜录音定位词｜同义替换｜正确答案｜错因（没定位 / 听不出词 / 对象错 / 词形错 / 拼写错 / 超词数）｜下次复测日期。
+
+**最终检查**：是否符合字数、是否匹配主体、是否需要复数、是否把提示例子误当录音答案、是否为未听完的题擅自填写。
