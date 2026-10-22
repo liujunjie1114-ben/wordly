@@ -47,6 +47,20 @@ function app(initial) {
   vm.runInContext(`let storageReadFailed=false;const KEY='wordly_app_v1';const defaults={words:[],logs:[],mistakes:{},settings:{mode:'meaning',feedback:'instant',plays:2,interval:3,auto:false,voice:''}};${names.map(functionSource).join('\n')}let db=load();`,context);
   return {run:code=>vm.runInContext(code,context),saved:()=>JSON.parse(memory.get('wordly_app_v1')),downloads};
 }
+test('task review export stays read-only and preserves all learning fields through complete backup and restore',async()=>{
+  const original=fixture(),core=require('../assets/word-tasks.js');
+  const task={id:'review-backup',day:'2026-10-22',title:'复盘保护',items:[{key:'review-one',entryId:'review-entry'}]};
+  original.wordTasks=core.record({},task,'review-one',{entered:'original attempt',correct:false,judgement:'auto',at:1});
+  original.wordTasks=core.record(original.wordTasks,task,'review-one',{entered:'alternative answer',correct:true,judgement:'self',at:2});
+  const site=app(original);site.run('save();');const before=JSON.stringify(site.saved());
+  const report=core.reviewText(task,site.saved().wordTasks,[{id:'review-entry',status:'ready',en:'sample expression',zh:'测试参考'}]);
+  assert.match(report,/original attempt/);assert.match(report,/alternative answer/);assert.equal(JSON.stringify(site.saved()),before);
+  site.run('downloadBackup(db);');const backup=JSON.parse(await site.downloads[0].text()),restored=app(fixture());
+  assert.equal(restored.run(`restoreLearningBackup(${JSON.stringify(backup)})`),true);
+  for(const key of ['wordTasks','logs','mistakes','daily','reading','memoryTyping','review','speaking'])assert.ok(JSON.stringify(restored.saved()[key])===JSON.stringify(site.saved()[key]),key+' preserved');
+  for(const word of site.saved().words)assert.deepEqual(restored.saved().words.find(w=>w.id===word.id),word);
+});
+
 test('deployment continues using existing learning and recording storage identities',()=>{
   assert.match(html,/const KEY='wordly_app_v1'/);
   assert.match(html,/indexedDB\.open\('wordly_audio_v1',1\)/);
