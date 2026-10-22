@@ -56,3 +56,20 @@ test('export action downloads a local task report, releases its URL and never sa
  assert.match(await blob.text(),/first try/);assert.match(notices.at(-1),/未自动上传/);timer();assert.equal(revoke,'blob:local-review');assert.equal(JSON.stringify(s),before);
  context.URL.createObjectURL=()=>{throw Error('download unavailable');};button.onclick();assert.match(notices.at(-1),/导出失败/);assert.equal(JSON.stringify(s),before);
 });
+
+test('view and copy fallback generates read-only task text safely, and reports real clipboard success or manual-copy instructions',async()=>{
+ const fs=require('node:fs'),vm=require('node:vm'),s=fixture(),before=JSON.stringify(s);let focused=false,selected=false,clipboardText='',resolveCopy;
+ const unsafeLibrary=[{...library[0],en:'</textarea><script>test</script>'},...library.slice(1)];
+ const textarea={value:'',focus(){focused=true;},select(){selected=true;}},status={textContent:''},button={disabled:false};
+ const panel={dataset:{wtReview:task.id},open:false,querySelector:q=>q==='[data-wt-review-text]'?textarea:q==='[data-wt-copy-status]'?status:button};
+ const target={innerHTML:'',querySelector:q=>q==='[data-wt-day]'?{}:null,querySelectorAll:q=>q==='[data-wt-review]'?[panel]:[]};
+ const context={module:{exports:{}},navigator:{clipboard:{writeText:text=>{clipboardText=text;return new Promise(resolve=>{resolveCopy=resolve;});}}}};
+ vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../assets/word-tasks.js'),'utf8'),context);
+ const isolated=context.module.exports;isolated.configure({tasks:[task],today:()=>task.day,getDb:()=>({wordTasks:s,knowledge:{entries:unsafeLibrary}}),saveState(){throw Error('Copy attempted to save');}});
+ isolated.mount(target);assert.match(target.innerHTML,/<textarea[^>]+readonly/);assert.doesNotMatch(target.innerHTML,/<script>test/);assert.equal(textarea.value,'');
+ panel.open=true;panel.ontoggle();assert.equal(textarea.value,core.reviewText(task,s,unsafeLibrary));assert.match(textarea.value,/first try/);assert.match(status.textContent,/本页生成/);
+ const pending=button.onclick();assert.equal(button.disabled,true);assert.doesNotMatch(status.textContent,/已复制/);resolveCopy();await pending;
+ assert.equal(clipboardText,textarea.value);assert.match(status.textContent,/已复制/);assert.equal(button.disabled,false);
+ context.navigator.clipboard.writeText=async()=>{throw Error('permission denied');};await button.onclick();assert.match(status.textContent,/Ctrl\+A.*Ctrl\+C/);assert.doesNotMatch(status.textContent,/已复制/);assert.equal(focused,true);assert.equal(selected,true);
+ delete context.navigator;await button.onclick();assert.match(status.textContent,/Ctrl\+A.*Ctrl\+C/);assert.equal(button.disabled,false);assert.equal(JSON.stringify(s),before);
+});
