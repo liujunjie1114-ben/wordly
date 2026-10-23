@@ -2,6 +2,14 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const notes=require('../assets/classroom-notes.js');
 const entry=(id,path,title,explanation,subject='reading')=>({id,title,kind:'knowledge',categories:[subject],status:'ready',sources:[{path,locator:'原文'}],explanation,summary:'',application:'',example:'',pitfalls:'',original:'',correction:'',practice:'',question:''});
+test('speaking classroom is shown by date and opens the complete lesson with the correct return subject',()=>{
+ const entries=[entry('s','口语第一次课_2026-10-23_Part1.md','口语第一次课｜01. 原则','# 原则\n完整课堂正文','speaking')];
+ const dashboard=require('../assets/study-dashboard.js');dashboard.configure({getDb:()=>({knowledge:{entries,review:{}}})});
+ assert.match(dashboard.subjectMarkup('speaking'),/口语课堂复盘/);
+ assert.match(notes.archiveMarkup(entries,'speaking'),/10月23日/);
+ assert.equal(notes.catalog(entries,'speaking').courses.length,1);
+ const html=notes.renderCourse(entries,entries[0].sources[0].path);assert.match(html,/data-study-course-back="speaking"/);assert.match(html,/完整课堂正文/);
+});
 test('course archive separates classroom notes from handouts and retains exact source paths',()=>{
  const entries=[entry('a','笔记/阅读第二次课.md','阅读第二次课｜00. 课程说明','# 目录'),entry('b','笔记/阅读第二次课.md','阅读第二次课｜01. 规则','正文'),entry('c','讲义/强化-阅读-Lesson 1.pdf','定位方法','摘录')];
  const archive=notes.catalog(entries,'reading');assert.equal(archive.courses.length,1);assert.equal(archive.courses[0].count,2);assert.equal(archive.courses[0].path,'笔记/阅读第二次课.md');assert.equal(archive.handouts.length,1);

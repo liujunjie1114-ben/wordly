@@ -2,7 +2,7 @@
  'use strict';
  const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const filename=p=>String(p).split(/[\\/]/).pop();
- const subjects={reading:'阅读',writing:'写作'};
+ const subjects={reading:'阅读',writing:'写作',speaking:'口语'};
  function catalog(entries,subject){
   const groups=new Map();
   for(const e of entries||[]){if(e.kind==='vocabulary'||!e.categories?.includes(subject))continue;for(const s of e.sources||[]){const name=filename(s.path);if(!/课|lesson|笔记/i.test(name))continue;if(!groups.has(s.path))groups.set(s.path,{path:s.path,name,title:name.replace(/\.[^.]+$/,''),count:0,date:(name.match(/20\d{2}-\d{2}-\d{2}/)||[])[0]||'',subject});groups.get(s.path).count++;}}
