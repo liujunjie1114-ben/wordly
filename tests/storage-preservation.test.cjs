@@ -11,7 +11,7 @@ function functionSource(name) {
   assert.ok(start >= 0, `Missing ${name}`);
   for (let end = html.indexOf('}', start); end >= 0; end = html.indexOf('}', end + 1)) {
     const source = html.slice(start, end + 1);
-    try { new vm.Script(`(${source})`); return source; } catch {}
+    try { new vm.Script(`(async ${source})`); return source; } catch {}
   }
   throw Error(`Cannot parse ${name}`);
 }
