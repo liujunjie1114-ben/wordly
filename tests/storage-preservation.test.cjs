@@ -24,7 +24,7 @@ function functionSource(name) {
   assert.ok(start >= 0, `Missing ${name}`);
   for (let end = html.indexOf('}', start); end >= 0; end = html.indexOf('}', end + 1)) {
     const source = html.slice(start, end + 1);
-    try { new vm.Script(`(${source})`); return source; } catch {}
+    try { new vm.Script(`(async ${source})`); return source; } catch {}
   }
   throw Error(`Cannot parse ${name}`);
 }
@@ -330,3 +330,25 @@ test('the teacher timetable preserves old results and future-day answers through
   for(const field of ['words','logs','mistakes','daily','review','reading'])assert.deepEqual(site.saved()[field],original[field]);
 });
 
+
+test('stopped audio is temporary until explicit admission; admission is idempotent', async () => {
+  const written=[];
+  const context={Blob,Date,recClock:null,recLimit:null,clearInterval(){},clearTimeout(){},uid:()=> 'test-audio',recState:{},page:'speaking-training',speakingTab:'bank',updateRecorderUi(){},loadRecordingList(){},recordingBusy:()=>false,persistRecording:async item=>written.push(item)};
+  vm.createContext(context);
+  vm.runInContext('async '+functionSource('finishRecording')+'\nasync '+functionSource('retrySaveRecording'),context);
+  await context.finishRecording({stream:{getTracks:()=>[{stop(){}}]},recorder:{mimeType:'audio/webm'},chunks:[new Blob(['audio'])],started:Date.now(),context:{topicId:'private-question'}});
+  assert.equal(written.length,0);
+  assert.equal(context.recState.latest.saved,false);
+  await context.retrySaveRecording();await context.retrySaveRecording();
+  assert.equal(written.length,1);
+  assert.equal(written[0].topicId,'private-question');
+  assert.equal(context.recState.latest.saved,true);
+});
+
+test('clearing audio requires confirmation and touches only audio stores', async () => {
+  let allow=false;const touched=[];
+  const context={recordingBusy:()=>false,recordingMetadata:async()=>[{},{}],confirm:()=>allow,toast(){},audioTransaction:async(stores,mode,fn)=>{assert.deepEqual(Array.from(stores),['recordings','recordingBlobs']);assert.equal(mode,'readwrite');fn({objectStore:name=>({clear:()=>touched.push(name)})});},URL:{revokeObjectURL(){}},recUrls:new Map(),recState:{latest:{saved:true}},updateRecorderUi(){},loadRecordingList(){}};
+  vm.createContext(context);vm.runInContext('async '+functionSource('clearRecordingLibrary'),context);
+  await context.clearRecordingLibrary();assert.equal(touched.length,0);
+  allow=true;await context.clearRecordingLibrary();assert.deepEqual(touched,['recordings','recordingBlobs']);
+});
