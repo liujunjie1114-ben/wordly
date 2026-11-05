@@ -169,11 +169,20 @@
       });
       let draft=null;
       if(v.draft!=null){const d=v.draft;if(!plain(d)||!safeId(d.quizId)||!Number.isInteger(d.version)||d.version<1||!plain(d.answers)||Object.keys(d.answers).some(k=>!safeId(k)||typeof d.answers[k]!=='string'||d.answers[k].length>1000))throw Error('知识点检测草稿异常');draft={quizId:d.quizId,version:d.version,answers:{...d.answers},questionIds:Array.isArray(d.questionIds)?d.questionIds.filter(safeId):null};}
-      out[id]={seenAt:num(v.seenAt),firstSeenAt:num(v.firstSeenAt),familiarity:v.familiarity||'unrated',familiarityUpdated:num(v.familiarityUpdated),attempts,draft,draftUpdated:num(v.draftUpdated)};
+      let recall={};
+      if(v.recallAttempts!==undefined||v.recallDraft!==undefined){
+        if(!Array.isArray(v.recallAttempts||[])||typeof (v.recallDraft??'')!=='string'||(v.recallDraft||'').length>4000)throw Error('回忆练习记录异常');
+        const seenRecall=new Set();const recallAttempts=(v.recallAttempts||[]).map(a=>{
+          if(!plain(a)||!safeId(a.id)||seenRecall.has(a.id)||!['again','remembered'].includes(a.assessment)||typeof a.entered!=='string'||!a.entered.trim()||a.entered.length>4000)throw Error('回忆练习历史异常');
+          seenRecall.add(a.id);return {id:a.id,at:num(a.at),entered:a.entered,assessment:a.assessment,prompt:text(a.prompt,2000),reference:text(a.reference,12000)};
+        });
+        recall={recallAttempts,recallDraft:v.recallDraft||'',recallDraftUpdated:num(v.recallDraftUpdated)};
+      }
+      out[id]={seenAt:num(v.seenAt),firstSeenAt:num(v.firstSeenAt),familiarity:v.familiarity||'unrated',familiarityUpdated:num(v.familiarityUpdated),attempts,draft,draftUpdated:num(v.draftUpdated),...recall};
     }
     return out;
   }
-  function learningPhase(state,id){const p=state.learning?.[id];return p?.attempts?.length||state.review?.[id]?.last?'practiced':p?.seenAt?'viewed':'unseen';}
+  function learningPhase(state,id){const p=state.learning?.[id];return p?.attempts?.length||p?.recallAttempts?.length||state.review?.[id]?.last?'practiced':p?.seenAt?'viewed':'unseen';}
   function learningRecord(state,id){const next=normalizeState(state);if(!next.entries.some(e=>e.id===id))throw Error('知识点不存在');next.learning=next.learning||{};next.learning[id]=next.learning[id]||{seenAt:0,firstSeenAt:0,familiarity:'unrated',familiarityUpdated:0,attempts:[],draft:null,draftUpdated:0};return next;}
   function markViewed(state,id,now=Date.now()){const next=learningRecord(state,id),p=next.learning[id];p.seenAt=num(now);p.firstSeenAt=p.firstSeenAt||num(now);return next;}
   function setFamiliarity(state,id,value,now=Date.now()){if(!['unrated','new','partial','familiar'].includes(value))throw Error('请选择有效熟悉程度');const next=learningRecord(state,id);next.learning[id].familiarity=value;next.learning[id].familiarityUpdated=num(now);return next;}
@@ -193,11 +202,33 @@
     const results=questions.map(q=>{const entered=answers[q.id];if(typeof entered!=='string'||!entered.trim()||entered.length>1000)throw Error('请完成每一道题后再提交');if(q.type==='choice'&&!q.options.some(o=>o.id===entered))throw Error('选择题答案无效');return {id:q.id,prompt:q.prompt,entered:q.type==='choice'?q.options.find(o=>o.id===entered).text:entered,expected:q.type==='choice'?q.options.find(o=>o.id===q.answers[0]).text:q.answers.join(' / '),explanation:q.explanation||'',correct:q.answers.some(a=>normalizedAnswer(a)===normalizedAnswer(entered))};});
     next.learning[id].attempts.push({id:attemptId,quizId:quiz.id,version:quiz.version,at:num(at),mode:questionIds?'mistakes':'full',results,total:results.length,score:results.filter(r=>r.correct).length});next.learning[id].draft=null;next.learning[id].draftUpdated=num(at);return normalizeState(next);
   }
+  function saveRecallDraft(state,id,answer,now=Date.now()){
+    const next=learningRecord(state,id),e=next.entries.find(e=>e.id===id);if(e.status!=='ready')throw Error('待核对内容暂不参加闯关');
+    if(typeof answer!=='string'||answer.length>4000)throw Error('回答请控制在 4000 字以内');
+    Object.assign(next.learning[id],{recallAttempts:next.learning[id].recallAttempts||[],recallDraft:answer,recallDraftUpdated:num(now)});return normalizeState(next);
+  }
+  function saveRecallDrafts(state,answers,now=Date.now()){
+    if(!plain(answers)||!Object.keys(answers).length||Object.keys(answers).length>16)throw Error('每组最多保存 16 道题');
+    const next=normalizeState(state),byId=new Map(next.entries.map(e=>[e.id,e]));next.learning=next.learning||{};
+    for(const [id,answer] of Object.entries(answers)){
+      if(!byId.has(id)||byId.get(id).status!=='ready'||typeof answer!=='string'||answer.length>4000)throw Error('题目未核对或回答格式异常');
+      const p=next.learning[id]||{seenAt:0,firstSeenAt:0,familiarity:'unrated',familiarityUpdated:0,attempts:[],draft:null,draftUpdated:0};
+      next.learning[id]={...p,recallAttempts:p.recallAttempts||[],recallDraft:answer,recallDraftUpdated:num(now)};
+    }
+    return normalizeState(next);
+  }
+  function submitRecall(state,id,assessment,{id:attemptId,at=Date.now()}={}){
+    if(!['again','remembered'].includes(assessment)||!safeId(attemptId))throw Error('回忆自评参数异常');
+    const next=learningRecord(state,id),e=next.entries.find(e=>e.id===id),p=next.learning[id];if(e.status!=='ready')throw Error('待核对内容暂不参加闯关');
+    if(!p.recallDraft?.trim())throw Error('请先写下独立回答，再对照自评');
+    if((p.recallAttempts||[]).some(a=>a.id===attemptId))throw Error('回忆记录编号重复');
+    Object.assign(p,{recallAttempts:[...(p.recallAttempts||[]),{id:attemptId,at:num(at),entered:p.recallDraft,assessment,prompt:e.question||e.en||e.title,reference:e.kind==='vocabulary'?e.zh:e.summary||e.explanation}],recallDraft:'',recallDraftUpdated:num(at)});return normalizeState(next);
+  }
   function mergeLearningMetadata(current,incoming){
     const next=normalizeState(current),other=normalizeState(incoming);next.learning=next.learning||{};const ids=new Set(next.entries.map(e=>e.id));
-    for(const [id,b] of Object.entries(other.learning||{})){if(!ids.has(id))throw Error('当前知识点已缺失，请重新打开资料库');const a=next.learning[id];if(!a){next.learning[id]=b;continue;}const attempts=new Map(a.attempts.map(x=>[x.id,x]));for(const x of b.attempts)if(attempts.has(x.id)&&JSON.stringify(attempts.get(x.id))!==JSON.stringify(x))throw Error('检测历史冲突，已停止覆盖');else attempts.set(x.id,x);next.learning[id]={...a,seenAt:Math.max(a.seenAt,b.seenAt),firstSeenAt:Math.min(...[a.firstSeenAt,b.firstSeenAt].filter(Boolean))||0,attempts:[...attempts.values()].sort((x,y)=>x.at-y.at),...(b.familiarityUpdated>=a.familiarityUpdated?{familiarity:b.familiarity,familiarityUpdated:b.familiarityUpdated}:{}),...(b.draftUpdated>=a.draftUpdated?{draft:b.draft,draftUpdated:b.draftUpdated}:{})};}
+    for(const [id,b] of Object.entries(other.learning||{})){if(!ids.has(id))throw Error('当前知识点已缺失，请重新打开资料库');const a=next.learning[id];if(!a){next.learning[id]=b;continue;}const recalls=new Map((a.recallAttempts||[]).map(x=>[x.id,x]));for(const x of b.recallAttempts||[])if(recalls.has(x.id)&&JSON.stringify(recalls.get(x.id))!==JSON.stringify(x))throw Error('回忆历史冲突，已停止覆盖');else recalls.set(x.id,x);const recall=recalls.size||a.recallDraft!==undefined||b.recallDraft!==undefined?{recallAttempts:[...recalls.values()].sort((x,y)=>x.at-y.at),recallDraft:b.recallDraft!==undefined&&(b.recallDraftUpdated||0)>=(a.recallDraftUpdated||0)?b.recallDraft:a.recallDraft||'',recallDraftUpdated:Math.max(a.recallDraftUpdated||0,b.recallDraftUpdated||0)}:{};const attempts=new Map(a.attempts.map(x=>[x.id,x]));for(const x of b.attempts)if(attempts.has(x.id)&&JSON.stringify(attempts.get(x.id))!==JSON.stringify(x))throw Error('检测历史冲突，已停止覆盖');else attempts.set(x.id,x);next.learning[id]={...a,...recall,seenAt:Math.max(a.seenAt,b.seenAt),firstSeenAt:Math.min(...[a.firstSeenAt,b.firstSeenAt].filter(Boolean))||0,attempts:[...attempts.values()].sort((x,y)=>x.at-y.at),...(b.familiarityUpdated>=a.familiarityUpdated?{familiarity:b.familiarity,familiarityUpdated:b.familiarityUpdated}:{}),...(b.draftUpdated>=a.draftUpdated?{draft:b.draft,draftUpdated:b.draftUpdated}:{})};}
     if(other.libraryView&&(!next.libraryView||other.libraryView.updated>=next.libraryView.updated))next.libraryView=other.libraryView;
     return normalizeState(next);
   }
-  return {subjects,fields,escape,entry,sources,sourceCatalog,normalizeState,readPack,exportPacks,merge,mergeWords,readDb,writeDb,writeProgressDb,filter,grade,due,learningPhase,markViewed,setFamiliarity,setLibraryView,validateQuiz,checkProgress,saveCheckDraft,submitCheck,mergeLearningMetadata,readLearningMetadata};
+  return {subjects,fields,escape,entry,sources,sourceCatalog,normalizeState,readPack,exportPacks,merge,mergeWords,readDb,writeDb,writeProgressDb,filter,grade,due,learningPhase,markViewed,setFamiliarity,setLibraryView,validateQuiz,checkProgress,saveCheckDraft,submitCheck,saveRecallDraft,saveRecallDrafts,submitRecall,mergeLearningMetadata,readLearningMetadata};
 });

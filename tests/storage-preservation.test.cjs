@@ -5,6 +5,19 @@ const path = require('node:path');
 const vm = require('node:vm');
 const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
 
+test('type-based recall saves first answers and retests in the original database and full backup',async()=>{
+ const original=fixture(),core=require('../assets/study-core.js');
+ original.knowledge=core.normalizeState({entries:[{id:'recall-card',title:'地图题方法',question:'怎样确定参照物？',summary:'先定参照物，再看方位关系。',kind:'knowledge',categories:['listening'],status:'ready',sources:[{path:'lesson.md',locator:'第1节'}]}]});
+ const site=app(original);let s=core.saveRecallDrafts(original.knowledge,{'recall-card':'首次独立答案'},10);assert.equal(site.run(`saveStudyLearning(${JSON.stringify(s)})`),true);
+ s=core.submitRecall(s,'recall-card','again',{id:'recall-first',at:10});assert.equal(site.run(`saveStudyLearning(${JSON.stringify(s)})`),true);
+ s=core.saveRecallDraft(s,'recall-card','复测独立答案',20);s=core.submitRecall(s,'recall-card','remembered',{id:'recall-second',at:21});assert.equal(site.run(`saveStudyLearning(${JSON.stringify(s)})`),true);
+ site.run('db=load();downloadBackup(db);');const exported=JSON.parse(await site.downloads[0].text()),p=exported.knowledge.learning['recall-card'];
+ assert.equal(p.recallAttempts[0].entered,'首次独立答案');assert.equal(p.recallAttempts[1].entered,'复测独立答案');assert.equal(p.recallDraft,'');assert.deepEqual(p.attempts,[]);
+ const restored=app(fixture());assert.equal(restored.run(`restoreLearningBackup(${JSON.stringify(exported)})`),true);assert.deepEqual(restored.saved().knowledge,site.saved().knowledge);
+ for(const word of site.saved().words)assert.deepEqual(restored.saved().words.find(w=>w.id===word.id),word);
+ for(const key of ['logs','mistakes','daily','reading','memoryTyping','review','speaking'])assert.deepEqual(restored.saved()[key],site.saved()[key]);
+});
+
 // Compile actual application functions, without starting the UI or using private user data.
 function functionSource(name) {
   const start = html.indexOf(`function ${name}(`);
