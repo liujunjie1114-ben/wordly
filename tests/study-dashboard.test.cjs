@@ -5,6 +5,13 @@ const ui=require('../assets/study-dashboard.js');
 const entries=['listening','reading','writing','speaking','grammar'].map(s=>({id:'card-'+s,title:s==='reading'?'<script>bad</script>':s,kind:'knowledge',categories:[s],status:'ready'}));
 entries.push({id:'vocab-one',title:'original',en:'original',kind:'vocabulary',categories:['reading'],status:'ready'});
 const db=()=>({knowledge:{entries,review:{}},words:[],mistakes:{old:{}},logs:[],speaking:{logs:[]},studyPlan:null});
+
+test('writing subject offers the full coach when secondary mobile navigation is hidden',()=>{
+ ui.configure({getDb:()=>db()});
+ assert.match(ui.subjectMarkup('writing'),/data-sd-route="writing-coach"/);
+ assert.match(ui.subjectMarkup('writing'),/完整讲解/);
+ assert.doesNotMatch(ui.subjectMarkup('reading'),/data-sd-route="writing-coach"/);
+});
 test('primary navigation has today followed by six subjects; empty progress is not success',()=>{
   assert.deepEqual(ui.primary.map(x=>x[0]),['home','hub-listening','hub-reading','hub-writing','hub-speaking','hub-words','hub-grammar']);
   const html=ui.navProgress(db(),'2026-10-09');assert.match(html,/value="0"/);assert.match(html,/尚未开始/);

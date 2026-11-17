@@ -53,13 +53,96 @@ function app(initial) {
   const context = vm.createContext({structuredClone,console,Blob,URL:{createObjectURL(blob){downloads.push(blob);return 'blob:test';},revokeObjectURL(){}},setTimeout(){},document:{createElement(){return {click(){}};}},WordlySpeakingCoach:require('../assets/speaking-coach.js'),WordlyStudyCore:require('../assets/study-core.js'),WordlyMonthPlan:require('../assets/month-plan-core.js'),localStorage:{getItem:key=>memory.get(key)||null,setItem:(key,value)=>memory.set(key,value)},renderNav(){},toast(){},WANG807:arraySource('WANG807'),FIRST_DICTATION:arraySource('FIRST_DICTATION'),FIRST_LESSON_ID:'first-dictation-2026-10-06',FIRST_LESSON_TIME:1791244800000});
   const names = ['uid','validCalendarDay','safeReviewNumber','normalizeReview','normalizeMemory','normalizeVocabPractice','normalizeListening','normalizeReading','normalizeSpeakingBank','normalizeSpeakingMaterial','normalizeSpeakingMaterials','normalizeSpeakingMaterialDraft','normalizeStudy','normalizeDb','load','save','seed807','seedFirstDictation','migrateReview'];
   context.WordlyWordTasks=require('../assets/word-tasks.js');
+  context.WordlyWritingCoach=require('../assets/writing-coach.js');
   if(html.includes('function saveTeacherWordTasks('))names.push('saveTeacherWordTasks');
   if(html.includes('function saveStudyLearning('))names.push('saveStudyLearning');
   if(html.includes('function saveStudyMaterials('))names.push('saveStudyMaterials');
-  for(const name of ['restoreLearningBackup','downloadRecoveryBackup','downloadBackup','saveStudyPlan'])if(html.includes(`function ${name}(`))names.push(name);
+  for(const name of ['restoreLearningBackup','downloadRecoveryBackup','downloadBackup','saveStudyPlan','importWritingCoachPack'])if(html.includes(`function ${name}(`))names.push(name);
   vm.runInContext(`let storageReadFailed=false;const KEY='wordly_app_v1';const defaults={words:[],logs:[],mistakes:{},settings:{mode:'meaning',feedback:'instant',plays:2,interval:3,auto:false,voice:''}};${names.map(functionSource).join('\n')}let db=load();`,context);
   return {run:code=>vm.runInContext(code,context),saved:()=>JSON.parse(memory.get('wordly_app_v1')),downloads};
 }
+
+test('private writing coach import is idempotent and preserves unrelated learning and schedules',()=>{
+ const site=app(fixture());site.run('save();');const before=site.saved();
+ const pack={schema:'wordly-study-pack',version:1,batch:{id:'coach-test',title:'写作教练'},entries:[{id:'coach-test-one',title:'让步与回应',explanation:'先承认顾虑，再回应顾虑。',kind:'knowledge',categories:['writing'],status:'ready',sources:[{path:'private-review.md',locator:'第1节'}]}]};
+ assert.equal(site.run(`importWritingCoachPack(${JSON.stringify(pack)})`),true);
+ assert.equal(site.run(`importWritingCoachPack(${JSON.stringify(pack)})`),true);
+ const after=site.saved();assert.equal(after.knowledge.entries.filter(e=>e.id==='coach-test-one').length,1);
+ for(const field of ['words','logs','mistakes','daily','review','reading','speaking','studyPlan','memoryTyping','wordTasks'])assert.deepEqual(after[field],before[field],field);
+ site.run('localStorage.setItem=()=>{throw Error("quota");};');const snapshot=site.run('JSON.stringify(db)');
+ assert.equal(site.run(`importWritingCoachPack(${JSON.stringify({...pack,batch:{id:'coach-test-2',title:'extra'},entries:[{...pack.entries[0],id:'coach-test-two',title:'第二条'}]})})`),false);
+ assert.equal(site.run('JSON.stringify(db)'),snapshot);
+});
+
+test('complete writing coach lessons survive reload and backup without losing existing learning',async()=>{
+ const site=app(fixture());site.run('save();');const before=site.saved();
+ const pack={schema:'wordly-study-pack',version:1,batch:{id:'coach-complete',title:'写作教练'},entries:[{id:'coach-complete-one',title:'双语课',kind:'knowledge',categories:['writing'],sources:[{path:'private.md'}]}]};
+ const course={title:'完整教练',subtitle:'中英对照',sections:[{id:'first',title:'第一课',html:'<p>中文意思</p><p>English expression.</p>'}]};
+ for(let i=0;i<2;i++)assert.equal(site.run(`importWritingCoachPack(${JSON.stringify(pack)},${JSON.stringify(course)})`),true);
+ site.run('db=load();');assert.deepEqual(JSON.parse(site.run('JSON.stringify(db.writingCoach)')),course);
+ site.run('downloadBackup(db);');const backup=JSON.parse(await site.downloads[0].text());
+ const restored=app(fixture());assert.equal(restored.run(`restoreLearningBackup(${JSON.stringify(backup)})`),true);
+ assert.deepEqual(restored.saved().writingCoach,course);assert.equal(restored.saved().knowledge.entries.filter(e=>e.id==='coach-complete-one').length,1);
+ for(const field of ['logs','mistakes','daily','reading','review','speaking','studyPlan','memoryTyping','wordTasks'])assert.deepEqual(site.saved()[field],before[field],field);
+ const snapshot=site.run('JSON.stringify(db)');site.run('localStorage.setItem=()=>{throw Error("quota");};');
+ assert.equal(site.run(`importWritingCoachPack(${JSON.stringify(pack)},${JSON.stringify({...course,title:'未保存版本'})})`),false);
+ assert.equal(site.run('JSON.stringify(db)'),snapshot);
+});
+
+test('a stale tab saving old learning preserves the latest complete writing coach',()=>{
+ const site=app(fixture()),course={title:'最新课程',subtitle:'',sections:[{id:'first',title:'第一课',html:'<p>完整正文</p>'}]};
+ site.run('save();');site.run(`const other=JSON.parse(localStorage.getItem(KEY));other.writingCoach=${JSON.stringify(course)};localStorage.setItem(KEY,JSON.stringify(other));`);
+ assert.equal(site.run('save();'),true);assert.deepEqual(site.saved().writingCoach,course);
+});
+
+test('a stale tab preserves newly imported coach cards, edits and review progress',()=>{
+ const site=app(fixture()),core=require('../assets/study-core.js');site.run('save();');
+ const card={id:'new-coach-card',title:'新课程资料',kind:'knowledge',categories:['writing'],summary:'用户已经修改的讲解',sources:[{path:'private.md'}]};
+ const course={title:'新课程',subtitle:'',entryIds:[card.id],sections:[{id:'first',title:'第一课',html:'<p>完整正文</p>'}]};
+ const knowledge=core.normalizeState({entries:[card],review:{[card.id]:{stage:3,due:900,last:800,reviews:4,lapses:1}}});
+ site.run(`const other=JSON.parse(localStorage.getItem(KEY));other.writingCoach=${JSON.stringify(course)};other.knowledge=${JSON.stringify(knowledge)};localStorage.setItem(KEY,JSON.stringify(other));`);
+ assert.equal(site.run('save();'),true);
+ assert.deepEqual(site.saved().writingCoach,course);
+ assert.deepEqual(site.saved().knowledge.entries,knowledge.entries);
+ assert.deepEqual(site.saved().knowledge.review,knowledge.review);
+});
+
+test('another tab saving unrelated records cannot silently undo a coach card edit',()=>{
+ const site=app(fixture()),core=require('../assets/study-core.js');
+ const card={id:'editable-coach-card',title:'课程资料',kind:'knowledge',categories:['writing'],summary:'原讲解',sources:[{path:'private.md'}]};
+ const course={title:'课程',subtitle:'',entryIds:[card.id],sections:[{id:'first',title:'第一课',html:'<p>正文</p>'}]};
+ site.run(`db.knowledge=${JSON.stringify(core.normalizeState({entries:[card]}))};db.writingCoach=${JSON.stringify(course)};save();`);
+ site.run('const other=JSON.parse(localStorage.getItem(KEY));other.settings.plays=7;localStorage.setItem(KEY,JSON.stringify(other));');
+ assert.equal(site.run('const edited=structuredClone(db.knowledge);edited.entries[0].summary="我的新讲解";saveStudyMaterials(edited);'),true);
+ assert.equal(site.saved().knowledge.entries[0].summary,'我的新讲解');
+});
+
+test('conflicting coach edits stop the save and retain the version already in storage',()=>{
+ const site=app(fixture()),core=require('../assets/study-core.js');
+ const card={id:'conflicting-coach-card',title:'课程资料',kind:'knowledge',categories:['writing'],summary:'原讲解',sources:[{path:'private.md'}]};
+ const course={title:'课程',subtitle:'',entryIds:[card.id],sections:[{id:'first',title:'第一课',html:'<p>正文</p>'}]};
+ site.run(`db.knowledge=${JSON.stringify(core.normalizeState({entries:[card]}))};db.writingCoach=${JSON.stringify(course)};save();`);
+ site.run('const other=JSON.parse(localStorage.getItem(KEY));other.knowledge.entries[0].summary="另一标签的新讲解";localStorage.setItem(KEY,JSON.stringify(other));');
+ assert.equal(site.run('const edited=structuredClone(db.knowledge);edited.entries[0].summary="当前标签的新讲解";saveStudyMaterials(edited);'),false);
+ assert.equal(site.saved().knowledge.entries[0].summary,'另一标签的新讲解');
+});
+
+test('failed coach imports keep records loaded from another tab before the failure',()=>{
+ const site=app(fixture()),pack={schema:'wordly-study-pack',version:1,batch:{id:'coach-race',title:'写作教练'},entries:[{id:'coach-race-one',title:'第一课',kind:'knowledge',categories:['writing'],sources:[{path:'lesson.md'}]}]};
+ assert.equal(site.run(`importWritingCoachPack(${JSON.stringify(pack)})`),true);
+ site.run('const other=JSON.parse(localStorage.getItem(KEY));other.logs.push({id:"other-tab-log",date:1,title:"另一标签的新日志",results:[]});localStorage.setItem(KEY,JSON.stringify(other));');
+ const conflicting={...pack,entries:[{...pack.entries[0],title:'编号冲突的其他内容'}]};
+ assert.equal(site.run(`importWritingCoachPack(${JSON.stringify(conflicting)})`),false);
+ assert.equal(site.run('save();'),true);assert.ok(site.saved().logs.some(l=>l.id==='other-tab-log'));
+});
+
+test('coach course links use retained existing IDs when an imported card merges by identity',()=>{
+ const site=app(fixture()),pack={schema:'wordly-study-pack',version:1,batch:{id:'coach-alias',title:'写作教练'},entries:[{id:'existing-card',title:'同一张卡',kind:'knowledge',categories:['writing'],sources:[{path:'lesson.md'}]}]};
+ assert.equal(site.run(`importWritingCoachPack(${JSON.stringify(pack)})`),true);
+ const incoming={...pack,entries:[{...pack.entries[0],id:'incoming-card'}]},course={title:'完整教练',subtitle:'',sections:[{id:'first',title:'第一课',html:'<p>正文</p>'}],entryIds:['incoming-card']};
+ assert.equal(site.run(`importWritingCoachPack(${JSON.stringify(incoming)},${JSON.stringify(course)})`),true);
+ assert.deepEqual(site.saved().writingCoach.entryIds,['existing-card']);assert.equal(site.saved().knowledge.entries.length,1);
+});
 test('task review export stays read-only and preserves all learning fields through complete backup and restore',async()=>{
   const original=fixture(),core=require('../assets/word-tasks.js');
   const task={id:'review-backup',day:'2026-10-22',title:'复盘保护',items:[{key:'review-one',entryId:'review-entry'}]};
