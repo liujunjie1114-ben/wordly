@@ -3,12 +3,41 @@
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  let config={},generation=0;
  function configure(value){config={...config,...value};}
+ const interactiveIds=new Set(['lesson-2026-11-18']);
+ function normalizeProgress(value){
+  if(!value||typeof value!=='object'||value.revision!=='nov18-v1'||!Number.isFinite(value.updated)||value.updated<0||!value.state||typeof value.state!=='object')throw Error('互动课进度格式不正确。');
+  const state={};
+  for(const key of ['family','rating','case','wordGroup','tab'])if(value.state[key]!==undefined){const text=value.state[key];if(typeof text!=='string'||!/^[a-zA-Z0-9-]{1,100}$/.test(text))throw Error('互动课位置不正确。');state[key]=text;}
+  for(const key of ['paragraph','sentence','word','grammar','quiz'])if(value.state[key]!==undefined){const n=value.state[key];if(!Number.isInteger(n)||n<0||n>1000)throw Error('互动课位置不正确。');state[key]=n;}
+  for(const key of ['caseOpen','flipped','grammarOpen'])if(value.state[key]!==undefined){if(typeof value.state[key]!=='boolean')throw Error('互动课状态不正确。');state[key]=value.state[key];}
+  if(value.state.answers!==undefined){if(!Array.isArray(value.state.answers)||value.state.answers.length>50||value.state.answers.some(a=>a!==null&&(!Number.isInteger(a)||a<0||a>20)))throw Error('互动课答案不正确。');state.answers=[...value.state.answers];}
+  return {revision:value.revision,updated:value.updated,state};
+ }
+ function mergeProgress(current={},incoming={}){const next={...current};for(const [id,value] of Object.entries(incoming))if(!next[id]||value.updated>next[id].updated)next[id]=value;return next;}
+ function mergeLessonState(latest={},incoming={},baseline={}){
+  const a=latest.answers||[],b=incoming.answers||baseline.answers||[],old=baseline.answers||[];
+  const answers=Array.from({length:Math.max(a.length,b.length,old.length)},(_,i)=>{
+   const saved=a[i]??null,local=b[i]??null,original=old[i]??null;
+   if(local===original||local===saved)return saved;if(saved===original)return local;
+   throw Error('另一页面也修改了这道题，已保留已保存的答案，请重新打开课程。');
+  });
+  return {...latest,...incoming,...(answers.length?{answers}:{})};
+ }
  function normalize(value){
   if(value==null)return null;
   const str=(s,max)=>typeof s==='string'&&s.length<=max;
   if(!str(value.title,500)||!value.title.trim()||!Array.isArray(value.sections)||!value.sections.length||value.sections.length>50||value.sections.some(s=>!s||!str(s.id,100)||!/^[a-z0-9-]+$/.test(s.id)||!str(s.title,500)||!s.title.trim()||!str(s.html,200000))||new Set(value.sections.map(s=>s.id)).size!==value.sections.length||value.sections.reduce((n,s)=>n+s.html.length,0)>2000000)throw Error('教练正文格式不正确，原学习记录保持不变。');
   if(value.entryIds!==undefined&&(!Array.isArray(value.entryIds)||value.entryIds.length>1000||value.entryIds.some(id=>typeof id!=='string'||!/^[\w-]{1,100}$/.test(id))||new Set(value.entryIds).size!==value.entryIds.length))throw Error('教练资料编号不正确。');
-  return {title:value.title,subtitle:str(value.subtitle,2000)?value.subtitle:'',sections:value.sections.map(s=>({id:s.id,title:s.title,html:s.html})),...(value.entryIds?{entryIds:[...value.entryIds]}:{})};
+  for(const section of value.sections)if(section.type!==undefined&&(section.type!=='interactive'||!interactiveIds.has(section.id)))throw Error('未知的互动课程格式。');
+  const lessonProgress={};
+  if(value.lessonProgress!==undefined){if(!value.lessonProgress||typeof value.lessonProgress!=='object'||Array.isArray(value.lessonProgress))throw Error('互动课进度不正确。');for(const [id,progress] of Object.entries(value.lessonProgress)){if(!interactiveIds.has(id)||!value.sections.some(s=>s.id===id&&s.type==='interactive'))throw Error('互动课进度没有对应课程。');lessonProgress[id]=normalizeProgress(progress);}}
+  return {title:value.title,subtitle:str(value.subtitle,2000)?value.subtitle:'',sections:value.sections.map(s=>({id:s.id,title:s.title,html:s.html,...(s.type?{type:s.type}:{})})),...(value.entryIds?{entryIds:[...value.entryIds]}:{}),...(value.lessonProgress!==undefined?{lessonProgress}:{})};
+ }
+ function mergeCourses(current,incoming){
+  const next=normalize(incoming),prior=normalize(current);if(!prior)return next;
+  const sections=new Map(prior.sections.map(s=>[s.id,s]));for(const section of next.sections)if(!sections.has(section.id)||section.type==='interactive')sections.set(section.id,section);
+  const progress=mergeProgress(prior.lessonProgress,next.lessonProgress);
+  return normalize({...next,subtitle:prior.sections.length>next.sections.length?prior.subtitle:next.subtitle,sections:[...sections.values()],...(prior.entryIds||next.entryIds?{entryIds:[...new Set([...(prior.entryIds||[]),...(next.entryIds||[])])]}:{}),...(prior.lessonProgress||next.lessonProgress?{lessonProgress:progress}:{})});
  }
  function validate(value){const course=normalize(value);if(!course)throw Error('请选择完整教练包。');return {...course,pack:core.readPack(value.pack)};}
  function preserveMaterials(current,latest,course,baseline){
@@ -43,41 +72,44 @@
  function download(data){const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='Wordly完整写作教练包.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
  async function mount(node){
   const current=++generation,local=['127.0.0.1','localhost'].includes(location.hostname);
-  let data=config.getCourse?.()||null,selected=0,busy=false,localRead=null;
+  let data=config.getCourse?.()||null,selected=Math.max(0,data?.sections.findIndex(s=>s.type==='interactive')??0),busy=false,localRead=null,stopLesson=null;
   const active=()=>generation===current&&node.isConnected!==false&&!!node.querySelector('[data-coach-content]');
   node.innerHTML='<div class="heading"><div><div class="eyebrow">WRITING COACH</div><h1>写作教练</h1><p>先读完整讲解，再用复习卡回忆。中文意思 → 英文表达 → 句子作用。</p></div></div><div class="wc-tools"><label class="btn light wc-import">导入完整教练包<input type="file" accept=".json,application/json" data-coach-file></label><button class="btn light" data-coach-export hidden>导出完整教练包</button>'+(local?'<button class="btn light" data-coach-local>合并本机最新课程</button>':'<a class="btn light" href="http://127.0.0.1:43142/#writing-coach" target="_blank" rel="noopener">打开本机教练</a>')+'</div><p class="wc-note" role="status" data-coach-status></p><div data-coach-content></div>';
   const status=message=>{if(active())node.querySelector('[data-coach-status]').textContent=message;};
   function show(index){
-   if(!data||!active())return;selected=Math.max(0,Math.min(data.sections.length-1,index));const section=data.sections[selected];
-   node.querySelector('[data-coach-body]').innerHTML=`<p class="wc-note">第 ${selected+1} / ${data.sections.length} 节</p><h2>${esc(section.title)}</h2>${safeHtml(section.html)}<div class="wc-tools"><button class="btn light" data-coach-step="-1" ${selected===0?'disabled':''}>上一课</button><button class="btn" data-coach-step="1" ${selected===data.sections.length-1?'disabled':''}>下一课</button></div>`;
+   if(!data||!active())return;stopLesson?.();selected=Math.max(0,Math.min(data.sections.length-1,index));const section=data.sections[selected];
+   node.querySelector('[data-coach-body]').innerHTML=`<p class="wc-note">第 ${selected+1} / ${data.sections.length} 节</p><h2>${esc(section.title)}</h2>${section.type==='interactive'?'<p class="wc-note">互动练习会自动保存在当前 Wordly，并随完整学习备份保留。</p><div data-coach-interactive></div>':safeHtml(section.html)}<div class="wc-tools"><button class="btn light" data-coach-step="-1" ${selected===0?'disabled':''}>上一课</button><button class="btn" data-coach-step="1" ${selected===data.sections.length-1?'disabled':''}>下一课</button></div>`;
+   if(section.type==='interactive')stopLesson=window.WordlyWritingInteractive.mount(node.querySelector('[data-coach-interactive]'),section,{getProgress:()=>config.getCourse?.()?.lessonProgress?.[section.id],save:(state,baseline)=>config.saveProgress(section.id,state,baseline),status,isActive:active});
    for(const b of node.querySelectorAll('[data-coach-section]')){const chosen=+b.dataset.coachSection===selected;b.classList.toggle('is-active',chosen);if(chosen)b.setAttribute('aria-current','true');else b.removeAttribute('aria-current');}
   }
   function draw(){
    if(!active())return;node.querySelector('[data-coach-export]').hidden=!data;
-   node.querySelector('[data-coach-content]').innerHTML=data?`<p>${esc(data.subtitle)}</p><div class="wc-tools"><button class="btn light" data-coach-cards>复习配套资料（${data.entryIds?.length||0} 条）</button></div><div class="wc-layout"><nav class="wc-menu" aria-label="教练课目录">${data.sections.map((s,i)=>`<button type="button" data-coach-section="${i}">${i+1}. ${esc(s.title)}</button>`).join('')}</nav><article class="wc-lesson" data-coach-body></article></div>`:'<section class="panel"><h2>把完整教练课合并进来</h2><p>选择从本机 Wordly 导出的“Wordly完整写作教练包.json”，即可在这里阅读正文和复习配套资料。只有复习卡的资料包请到“资料复习”导入。</p><p>课程保存在当前浏览器，并随“设置与备份”的完整备份保留；不同网址的数据需要手动导入。</p></section>';
+   node.querySelector('[data-coach-content]').innerHTML=data?`<p>${esc(data.subtitle)}</p>${data.sections.some(s=>s.type==='interactive')?`<div class="wc-recent"><strong>最近课程</strong>${data.sections.map((s,i)=>s.type==='interactive'?`<button class="btn light" data-coach-recent="${i}">${esc(s.title)}</button>`:'').join('')}</div>`:''}<div class="wc-tools"><button class="btn light" data-coach-cards>复习配套资料（${data.entryIds?.length||0} 条）</button></div><div class="wc-layout"><nav class="wc-menu" aria-label="教练课目录">${data.sections.map((s,i)=>`<button type="button" data-coach-section="${i}">${i+1}. ${esc(s.title)}</button>`).join('')}</nav><article class="wc-lesson" data-coach-body></article></div>`:'<section class="panel"><h2>把完整教练课合并进来</h2><p>选择从本机 Wordly 导出的“Wordly完整写作教练包.json”，即可在这里阅读正文和复习配套资料。只有复习卡的资料包请到“资料复习”导入。</p><p>课程保存在当前浏览器，并随“设置与备份”的完整备份保留；不同网址的数据需要手动导入。</p></section>';
    show(selected);
   }
-  function merge(raw){
+  async function merge(raw){
    const next=validate(raw),course={...normalize(next),entryIds:next.pack.entries.map(e=>e.id)};
+   for(const section of course.sections)if(section.type==='interactive')await window.WordlyWritingInteractive.documentFor(section,null,'verify-import');
+   if(!active())return;
    if(!config.importPack(next.pack,course))throw Error('课程未能保存。请先导出备份并检查浏览器存储空间。');
-   data=config.getCourse?.()||course;selected=0;draw();status(`已合并 ${data.sections.length} 节完整教学、${data.entryIds.length} 条资料。重复导入不增加副本；原学习记录保留，阅读不自动计为练习通过。`);
+   data=config.getCourse?.()||course;selected=Math.max(0,data.sections.findIndex(s=>s.type==='interactive'));draw();status(`已合并 ${data.sections.length} 节完整教学、${data.entryIds.length} 条资料。重复导入不增加副本；原学习记录保留，阅读不自动计为练习通过。`);
   }
   async function readLocal(){
    if(busy)return;busy=true;status('正在读取本机完整教练课…');
-   try{const response=await fetch('/personal-writing/教练正文.json',{cache:'no-store'});if(!response.ok)throw Error('本机课程尚未载入，请运行 D 盘写作教练的“双击启动.cmd”，或导入完整教练包。');const raw=await response.json();if(active())merge(raw);}catch(error){status(error.message);}finally{busy=false;}
+   try{const response=await fetch('/personal-writing/教练正文.json',{cache:'no-store'});if(!response.ok)throw Error('本机课程尚未载入，请运行 D 盘写作教练的“双击启动.cmd”，或导入完整教练包。');const raw=await response.json();if(active())await merge(raw);}catch(error){status(error.message);}finally{busy=false;}
   }
   node.querySelector('[data-coach-file]').onchange=async e=>{
    const file=e.target.files[0];if(!file)return;if(localRead){await localRead;if(!active())return;}if(busy){e.target.value='';return;}busy=true;
-   try{if(file.size>8*1024*1024)throw Error('教练包超过 8 MB，请检查是否选择了正确文件。');const raw=JSON.parse(await file.text());if(active())merge(raw);}catch(error){status('导入未完成：'+error.message);}finally{busy=false;e.target.value='';}
+   try{if(file.size>8*1024*1024)throw Error('教练包超过 8 MB，请检查是否选择了正确文件。');const raw=JSON.parse(await file.text());if(active())await merge(raw);}catch(error){status('导入未完成：'+error.message);}finally{busy=false;e.target.value='';}
   };
   node.onclick=e=>{
-   const section=e.target.closest('[data-coach-section]'),step=e.target.closest('[data-coach-step]');
-   if(section||step){show(section?+section.dataset.coachSection:selected+ +step.dataset.coachStep);node.querySelector('[data-coach-body]')?.scrollIntoView({block:'start'});}
+   const section=e.target.closest('[data-coach-section]'),recent=e.target.closest('[data-coach-recent]'),step=e.target.closest('[data-coach-step]');
+   if(section||step||recent){show(section?+section.dataset.coachSection:recent?+recent.dataset.coachRecent:selected+ +step.dataset.coachStep);node.querySelector('[data-coach-body]')?.scrollIntoView({block:'start'});}
    if(e.target.closest('[data-coach-cards]')&&data)config.openCards(data.entryIds||[]);
    if(e.target.closest('[data-coach-local]'))localRead=readLocal();
-   if(e.target.closest('[data-coach-export]')&&data){try{download(validate({...data,pack:config.getPack(data.entryIds||[])}));status('已导出完整教练包，可在其他 Wordly 网址导入。学习进度请另存完整备份。');}catch(error){status('导出未完成：'+error.message);}}
+   if(e.target.closest('[data-coach-export]')&&data){try{const saved=config.getCourse?.()||data;download(validate({...saved,pack:config.getPack(saved.entryIds||[])}));status('已导出完整教练包，可在其他 Wordly 网址导入。学习进度请另存完整备份。');}catch(error){status('导出未完成：'+error.message);}}
   };
   draw();if(data)status('已载入本浏览器保存的完整课程。课程正文随完整学习备份保留。');else if(local)await (localRead=readLocal());
  }
- return {configure,mount,normalize,validate,resolveEntryIds,preserveMaterials};
+ return {configure,mount,normalize,validate,resolveEntryIds,preserveMaterials,normalizeProgress,mergeProgress,mergeCourses,mergeLessonState};
 });

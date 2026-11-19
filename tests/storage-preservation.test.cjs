@@ -57,7 +57,7 @@ function app(initial) {
   if(html.includes('function saveTeacherWordTasks('))names.push('saveTeacherWordTasks');
   if(html.includes('function saveStudyLearning('))names.push('saveStudyLearning');
   if(html.includes('function saveStudyMaterials('))names.push('saveStudyMaterials');
-  for(const name of ['restoreLearningBackup','downloadRecoveryBackup','downloadBackup','saveStudyPlan','importWritingCoachPack'])if(html.includes(`function ${name}(`))names.push(name);
+  for(const name of ['restoreLearningBackup','downloadRecoveryBackup','downloadBackup','saveStudyPlan','importWritingCoachPack','saveWritingLessonProgress'])if(html.includes(`function ${name}(`))names.push(name);
   vm.runInContext(`let storageReadFailed=false;const KEY='wordly_app_v1';const defaults={words:[],logs:[],mistakes:{},settings:{mode:'meaning',feedback:'instant',plays:2,interval:3,auto:false,voice:''}};${names.map(functionSource).join('\n')}let db=load();`,context);
   return {run:code=>vm.runInContext(code,context),saved:()=>JSON.parse(memory.get('wordly_app_v1')),downloads};
 }
@@ -72,6 +72,39 @@ test('private writing coach import is idempotent and preserves unrelated learnin
  site.run('localStorage.setItem=()=>{throw Error("quota");};');const snapshot=site.run('JSON.stringify(db)');
  assert.equal(site.run(`importWritingCoachPack(${JSON.stringify({...pack,batch:{id:'coach-test-2',title:'extra'},entries:[{...pack.entries[0],id:'coach-test-two',title:'第二条'}]})})`),false);
  assert.equal(site.run('JSON.stringify(db)'),snapshot);
+});
+
+test('interactive course progress and new lessons survive old imports, stale saves and full backup',async()=>{
+ const site=app(fixture());site.run('save();');const before=site.saved();
+ const card={id:'interactive-card',title:'写作方法',kind:'knowledge',categories:['writing'],sources:[{path:'private.md'}]};
+ const pack={schema:'wordly-study-pack',version:1,batch:{id:'interactive-course',title:'写作'},entries:[card]};
+ const oldCourse={title:'原课程',sections:[{id:'first',title:'原课',html:'<p>原课正文</p>'}],entryIds:[card.id]};
+ const course={...oldCourse,sections:[...oldCourse.sections,{id:'lesson-2026-11-18',title:'11月18日互动课',type:'interactive',html:'fixture'}]};
+ assert.equal(site.run(`importWritingCoachPack(${JSON.stringify(pack)},${JSON.stringify(course)})`),true);
+ assert.equal(site.run(`saveWritingLessonProgress('lesson-2026-11-18',{answers:[1,null],quiz:1})`),true);
+ const progress=site.saved().writingCoach.lessonProgress;
+ assert.equal(site.run(`importWritingCoachPack(${JSON.stringify(pack)},${JSON.stringify(oldCourse)})`),true);
+ assert.equal(site.saved().writingCoach.sections.length,2);assert.deepEqual(site.saved().writingCoach.lessonProgress,progress);
+ site.run('const other=JSON.parse(localStorage.getItem(KEY));other.writingCoach.lessonProgress["lesson-2026-11-18"].updated+=100;other.writingCoach.lessonProgress["lesson-2026-11-18"].state.answers=[1,0];localStorage.setItem(KEY,JSON.stringify(other));save();');
+ assert.deepEqual(site.saved().writingCoach.lessonProgress['lesson-2026-11-18'].state.answers,[1,0]);
+ site.run('downloadBackup(db);');const backup=JSON.parse(await site.downloads[0].text()),restored=app(fixture());assert.equal(restored.run(`restoreLearningBackup(${JSON.stringify(backup)})`),true);
+ assert.deepEqual(restored.saved().writingCoach,site.saved().writingCoach);
+ for(const key of ['words','logs','mistakes','daily','reading','review','speaking','wordTasks','memoryTyping','studyPlan'])assert.deepEqual(site.saved()[key],before[key],key);
+ const snapshot=site.run('JSON.stringify(db)');site.run('localStorage.setItem=()=>{throw Error("quota")};');
+ assert.equal(site.run(`saveWritingLessonProgress('lesson-2026-11-18',{answers:[0],quiz:0})`),false);assert.equal(site.run('JSON.stringify(db)'),snapshot);
+});
+
+test('two interactive lesson tabs preserve independent answers and reject conflicting edits',()=>{
+ const site=app(fixture()),card={id:'concurrent-card',title:'方法',kind:'knowledge',categories:['writing'],sources:[{path:'lesson.md'}]},pack={schema:'wordly-study-pack',version:1,batch:{id:'concurrent-lesson',title:'课程'},entries:[card]};
+ const course={title:'课程',sections:[{id:'lesson-2026-11-18',title:'互动课',type:'interactive',html:'fixture'}],entryIds:[card.id]};
+ assert.equal(site.run(`importWritingCoachPack(${JSON.stringify(pack)},${JSON.stringify(course)})`),true);
+ assert.equal(site.run(`saveWritingLessonProgress('lesson-2026-11-18',{answers:[1,null],quiz:0},{answers:[null,null],quiz:0})`),true);
+ assert.equal(site.run(`saveWritingLessonProgress('lesson-2026-11-18',{answers:[null,0],quiz:1},{answers:[null,null],quiz:0})`),true);
+ assert.deepEqual(site.saved().writingCoach.lessonProgress['lesson-2026-11-18'].state.answers,[1,0]);
+ assert.equal(site.run(`saveWritingLessonProgress('lesson-2026-11-18',{answers:[null,0],quiz:0},{answers:[null,0],quiz:1})`),true);
+ assert.deepEqual(site.saved().writingCoach.lessonProgress['lesson-2026-11-18'].state.answers,[1,0]);
+ const before=site.saved();assert.equal(site.run(`saveWritingLessonProgress('lesson-2026-11-18',{answers:[0,0],quiz:0},{answers:[null,0],quiz:0})`),false);
+ assert.deepEqual(site.saved(),before);
 });
 
 test('complete writing coach lessons survive reload and backup without losing existing learning',async()=>{
