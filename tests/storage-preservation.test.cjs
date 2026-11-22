@@ -5,6 +5,25 @@ const path = require('node:path');
 const vm = require('node:vm');
 const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
 
+test('speaking vocabulary rounds keep original storage, concurrent learning changes and backup history',async()=>{
+ const site=app(fixture()),vocab=require('../assets/speaking-vocab.js');
+ site.run('save();');const before=site.saved();
+ let state=vocab.start(vocab.empty(),{limit:2},100,()=>0);
+ state=vocab.grade(vocab.reveal(state,'my first answer',150),'stuck',{now:200,id:'sv-first'});
+ assert.equal(site.run(`saveSpeakingVocabState(${JSON.stringify(state)})`),true);
+ site.run(`(()=>{const fresh=JSON.parse(localStorage.getItem(KEY));fresh.words[0].correctCount=99;fresh.speaking.drafts['other-tab']={notes:'其他标签的新草稿'};localStorage.setItem(KEY,JSON.stringify(fresh));})()`);
+ state=vocab.grade(vocab.reveal(state,'my next answer',250),'smooth',{now:300,id:'sv-next'});
+ assert.equal(site.run(`saveSpeakingVocabState(${JSON.stringify(state)})`),true);
+ assert.equal(site.run(`saveSpeakingVocabState(${JSON.stringify(state)})`),true);
+ site.run('db=load();downloadBackup(db);');const exported=JSON.parse(await site.downloads[0].text());
+ assert.equal(exported.words[0].correctCount,99);assert.equal(exported.speaking.drafts['other-tab'].notes,'其他标签的新草稿');
+ const history=exported.speaking.drafts['vocab-recall-v1'];assert.equal(history.attempts.length,2);assert.equal(history.attempts[0].answer,'my first answer');assert.equal(history.draft.index,2);
+ for(const key of ['logs','mistakes','daily','reading','memoryTyping','review'])assert.deepEqual(exported[key],before[key]);
+ assert.deepEqual(exported.speaking.logs,before.speaking.logs);assert.deepEqual(exported.speaking.drafts.cue,before.speaking.drafts.cue);
+ const restored=app(fixture());assert.equal(restored.run(`restoreLearningBackup(${JSON.stringify(exported)})`),true);
+ assert.deepEqual(restored.saved().speaking,exported.speaking);
+});
+
 test('type-based recall saves first answers and retests in the original database and full backup',async()=>{
  const original=fixture(),core=require('../assets/study-core.js');
  original.knowledge=core.normalizeState({entries:[{id:'recall-card',title:'地图题方法',question:'怎样确定参照物？',summary:'先定参照物，再看方位关系。',kind:'knowledge',categories:['listening'],status:'ready',sources:[{path:'lesson.md',locator:'第1节'}]}]});
@@ -53,6 +72,8 @@ function app(initial) {
   const context = vm.createContext({structuredClone,console,Blob,URL:{createObjectURL(blob){downloads.push(blob);return 'blob:test';},revokeObjectURL(){}},setTimeout(){},document:{createElement(){return {click(){}};}},WordlySpeakingCoach:require('../assets/speaking-coach.js'),WordlyStudyCore:require('../assets/study-core.js'),WordlyMonthPlan:require('../assets/month-plan-core.js'),localStorage:{getItem:key=>memory.get(key)||null,setItem:(key,value)=>memory.set(key,value)},renderNav(){},toast(){},WANG807:arraySource('WANG807'),FIRST_DICTATION:arraySource('FIRST_DICTATION'),FIRST_LESSON_ID:'first-dictation-2026-10-06',FIRST_LESSON_TIME:1791244800000});
   const names = ['uid','validCalendarDay','safeReviewNumber','normalizeReview','normalizeMemory','normalizeVocabPractice','normalizeListening','normalizeReading','normalizeSpeakingBank','normalizeSpeakingMaterial','normalizeSpeakingMaterials','normalizeSpeakingMaterialDraft','normalizeStudy','normalizeDb','load','save','seed807','seedFirstDictation','migrateReview'];
   context.WordlyWordTasks=require('../assets/word-tasks.js');
+  context.WordlySpeakingVocab=require('../assets/speaking-vocab.js');
+  names.push('saveSpeakingVocabState');
   context.WordlyWritingCoach=require('../assets/writing-coach.js');
   if(html.includes('function saveTeacherWordTasks('))names.push('saveTeacherWordTasks');
   if(html.includes('function saveStudyLearning('))names.push('saveStudyLearning');

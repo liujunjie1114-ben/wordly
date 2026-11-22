@@ -1,5 +1,7 @@
 # Wordly 维护约定
 
+- 口语词汇转换记忆位于 `#speaking-vocab`；120条通用表达在 `assets/speaking-vocab-data.js`。练习记录存于原键的 `speaking.drafts['vocab-recall-v1']`，不覆盖旧题卡草稿；保留逐次原答案和跨标签新增记录。详见 `docs/speaking-vocab.md`。
+
 - 保持静态 HTML、CSS、原生 JavaScript 结构。生产地址继续使用现有 GitHub Pages 与 Vercel 项目。
 - 每次更新必须保留学习数据。不得为了发布、换版、初始化或界面修改而清空 localStorage / IndexedDB。
 - 学习数据键保持 `wordly_app_v1`；录音数据库保持 `wordly_audio_v1`。不得换键后把旧数据留在无法读取的位置。
