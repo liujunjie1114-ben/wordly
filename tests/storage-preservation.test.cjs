@@ -72,6 +72,8 @@ function app(initial) {
   const context = vm.createContext({structuredClone,console,Blob,URL:{createObjectURL(blob){downloads.push(blob);return 'blob:test';},revokeObjectURL(){}},setTimeout(){},document:{createElement(){return {click(){}};}},WordlySpeakingCoach:require('../assets/speaking-coach.js'),WordlyStudyCore:require('../assets/study-core.js'),WordlyMonthPlan:require('../assets/month-plan-core.js'),localStorage:{getItem:key=>memory.get(key)||null,setItem:(key,value)=>memory.set(key,value)},renderNav(){},toast(){},WANG807:arraySource('WANG807'),FIRST_DICTATION:arraySource('FIRST_DICTATION'),FIRST_LESSON_ID:'first-dictation-2026-10-06',FIRST_LESSON_TIME:1791244800000});
   const names = ['uid','validCalendarDay','safeReviewNumber','normalizeReview','normalizeMemory','normalizeVocabPractice','normalizeListening','normalizeReading','normalizeSpeakingBank','normalizeSpeakingMaterial','normalizeSpeakingMaterials','normalizeSpeakingMaterialDraft','normalizeStudy','normalizeDb','load','save','seed807','seedFirstDictation','migrateReview'];
   context.WordlyWordTasks=require('../assets/word-tasks.js');
+  context.WordlySpeakingStructure=require('../assets/speaking-structure.js');
+  names.push('saveSpeakingStructures');
   context.WordlySpeakingVocab=require('../assets/speaking-vocab.js');
   names.push('saveSpeakingVocabState');
   context.WordlyWritingCoach=require('../assets/writing-coach.js');
@@ -488,4 +490,26 @@ test('clearing audio requires confirmation and touches only audio stores', async
   vm.createContext(context);vm.runInContext('async '+functionSource('clearRecordingLibrary'),context);
   await context.clearRecordingLibrary();assert.equal(touched.length,0);
   allow=true;await context.clearRecordingLibrary();assert.deepEqual(touched,['recordings','recordingBlobs']);
+});
+
+test('structure practice survives reload, complete backup and repeated imports without changing existing learning',async()=>{
+ const a=require('../assets/speaking-structure.js'),site=app(fixture());site.run('save();');const before=site.saved();
+ const q=a.makeBank([{question:'Do you like shoes?',topic:'Shoes'}])[0];
+ let state=a.importPack({},a.exportPack({},[q]));state=a.saveDraft(state,q.id,{draft:'My first answer',correction:'My corrected answer',error:'like doing'},10);state=a.submit(state,q.id,{id:'structure-first',at:11,status:'again'});
+ state.frameworks.A={text:'Position, reason, detail, feeling',updated:12};state.session={group:'A',ids:[q.id],index:0,updated:12};
+ assert.equal(site.run(`saveSpeakingStructures(${JSON.stringify(state)})`),true);
+ site.run('db=load();');assert.equal(site.run(`db.speaking.structures.progress['${q.id}'].firstAnswer`),'My first answer');
+ assert.equal(site.run(`saveSpeakingStructures(${JSON.stringify(state)})`),true);
+ site.run('downloadBackup(db);');const backup=JSON.parse(await site.downloads[0].text());
+ const restored=app(fixture());assert.equal(restored.run(`restoreLearningBackup(${JSON.stringify(backup)})`),true);assert.deepEqual(restored.saved().speaking.structures,site.saved().speaking.structures);
+ for(const field of ['words','logs','mistakes','daily','reading','review','memoryTyping','wordTasks','studyPlan'])assert.deepEqual(site.saved()[field],before[field],field);
+ for(const field of ['bank','drafts','logs','materials','materialDraft','coachReview','custom'])assert.deepEqual(site.saved().speaking[field],before.speaking[field],field);
+ const snapshot=site.run('JSON.stringify(db)');site.run('localStorage.setItem=()=>{throw Error("quota");};');assert.equal(site.run(`saveSpeakingStructures(${JSON.stringify({...state,frameworks:{A:{text:'Unsaved change',updated:30}}})})`),false);assert.equal(site.run('JSON.stringify(db)'),snapshot);
+});
+
+test('a stale tab saving other work preserves structure practice written by another tab',()=>{
+ const a=require('../assets/speaking-structure.js'),site=app(fixture());site.run('save();');
+ const q=a.makeBank([{question:'Do you like music?',topic:'Music'}])[0];let state=a.saveDraft({},q.id,{draft:'New answer in another tab'},20);state=a.submit(state,q.id,{id:'other-tab-answer',at:21,status:'practised'});
+ site.run(`const other=JSON.parse(localStorage.getItem(KEY));other.speaking.structures=${JSON.stringify(state)};localStorage.setItem(KEY,JSON.stringify(other));`);
+ assert.equal(site.run('save();'),true);assert.equal(site.saved().speaking.structures.progress[q.id].firstAnswer,'New answer in another tab');
 });

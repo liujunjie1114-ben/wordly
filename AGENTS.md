@@ -24,3 +24,5 @@
 - 大库练习快捷保存只用于 updateWordProgress / checkMemoryTyping；先核对 load.lastRaw 后调用 writeProgressDb。新增其他可变字段不得误用此路径，必须保留完整保存。studyWordProgress / studyWordProgressChanges 是同键内的存储格式，完整备份必须还原到词条字段；修改需验证旧格式、损坏保护、多次练习及备份。内置音频不自动回退设备声音。
 - 每日任务先学词表为只读浏览，不得自动计正确、熟练或复习完成。来源书架按当前浏览器knowledge.entries.sources分组；原Word/PDF文件及私人文本不得因增加导航公开上传。来源筛选在knowledge.libraryView.source中可选保存，旧备份默认全库；同名不同路径文件必须区分。修改后运行两套任务/资料版本脚本并检查旧记录保留。
 - 电影题节奏课使用 LESSON-2026-10-08-MOVIES / rhythm-v1；自查仍在 speaking.coachReview，检查语义按 cueId 区分。Part 1 课堂复测为30秒，原 Part 2仍120秒。修改 speaking-rhythm.js 或10月8日原文时同步生成阅读页及口语缓存版本，不重写旧题ID和旧自查语义。
+
+- 口语结构练习入口为 `#speaking-structure`。模块 `assets/speaking-structure.js` 按回答任务分类，额外90条通用题干在 `assets/speaking-structure-questions.js`。私人补充题、框架、首次回答、复测历史和续练位置保存在原数据库 `speaking.structures`，导入按稳定ID合并；不得清空旧口语草稿或录音。修改后更新口语与资料缓存版本，验证完整备份、跨标签保存和恢复。

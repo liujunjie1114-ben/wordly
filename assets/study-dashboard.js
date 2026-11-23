@@ -9,7 +9,7 @@
     writing:['先审题与立场，再组织段落；图表先选主要特征。','轮换提纲、主体段和完整作文；不每天堆一篇全文。','保存原句与修订句，说明逻辑、语法或搭配的改动。'],
     speaking:['用关键词组织经历和观点，不照搬整篇范文。','P1 直答加细节；P2 讲经历；P3 给理由、例子与限制。','保留录音，挑一个最影响理解的问题，重说一次。'],
     grammar:['先看规则的条件和例外，再对比容易混淆的结构。','自己写最小对比例句，再放回阅读、口语和作文中。','记录错误原句、建议修正及为什么这样改。']};
-  const practice={listening:[['listening','TED / BBC 片段'],['study','单词听写'],['lessons','自建听写']],reading:[['knowledge','阅读题型与证据']],writing:[['knowledge','写作结构与修订']],speaking:[['speaking-vocab','口语词汇转换记忆'],['speaking-training','录音训练（我的题目）'],['speaking','题库与计时'],['speaking-library','口语素材整理']],words:[['book','我的单词词库'],['study','听写复测'],['readers','词汇书']],grammar:[['knowledge','语法对比练习']]};
+  const practice={listening:[['listening','TED / BBC 片段'],['study','单词听写'],['lessons','自建听写']],reading:[['knowledge','阅读题型与证据']],writing:[['knowledge','写作结构与修订']],speaking:[['speaking-structure','口语结构练习'],['speaking-vocab','口语词汇转换记忆'],['speaking-training','录音训练（我的题目）'],['speaking','题库与计时'],['speaking-library','口语素材整理']],words:[['book','我的单词词库'],['study','听写复测'],['readers','词汇书']],grammar:[['knowledge','语法对比练习']]};
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let config={getDb:()=>({}),savePlan:()=>false,navigate:()=>false,openKnowledge:()=>false,notify:()=>{}},node=null,mode='home',selectedDay=null;
   const drafts=new Map();let preview=null;
