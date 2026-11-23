@@ -46,3 +46,5 @@ museum / theatre / cinema / gallery / exhibition / conference / concert / festiv
 ## 词音维护
 
 补充词音以Kokoro同款bf_emma生成，ONNX推理由官方开源项目 https://github.com/thewh1teagle/kokoro-onnx 提供。生成脚本为scripts/generate-p1-audio.py；逐段检查时长、信号有效性、音素与文件散列，新MP3使用新散列文件名，保留旧文件。合成音不等同于逐词真人审校。
+
+月份August的词音已依据Cambridge的 /ˈɔːɡəst/ 修正；保留旧散列音频用于历史版本，当前映射使用新文件。

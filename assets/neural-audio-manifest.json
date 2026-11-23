@@ -8,7 +8,7 @@
   "sampleRate": 24000,
   "license": "Apache-2.0",
   "modelSource": "https://huggingface.co/hexgrad/Kokoro-82M",
-  "overrideVersion": 2,
+  "overrideVersion": 3,
   "clips": [
     {
       "key": "archaeological",
@@ -17684,13 +17684,18 @@
     },
     {
       "key": "august",
-      "text": "august",
-      "url": "/assets/11dccada26992c39557128c9.mp3",
-      "sha256": "11dccada26992c39557128c9dc0b1122dac0e307586a999eaf4c66a971d83369",
-      "duration": 1.1115,
-      "phonemes": "ɔːɡˈʌst.",
-      "overrides": [],
-      "inputHash": "9a28adb4967b4b3d8b16664c663e0e2c57532f7d4fdb551c4887ef576e1a9a19"
+      "text": "August",
+      "url": "/assets/1781bd0bc4d30660455d0de8.mp3",
+      "sha256": "1781bd0bc4d30660455d0de8af1d4370b77b134dff51ae4c135a466f3e4b5bd1",
+      "duration": 1.0027,
+      "phonemes": "ˈɔːɡəst.",
+      "overrides": [
+        "august"
+      ],
+      "inputHash": "9579c4b609058a0e28ded0de3ceb09b8120a49b4a45224277b24f18830858ebb",
+      "engine": "kokoro-onnx-0.4.7",
+      "modelHash": "6e742170d309016e5891a994e1ce1559c702a2ccd0075e67ef7157974f6406cb",
+      "voice": "bf_emma"
     },
     {
       "key": "september",

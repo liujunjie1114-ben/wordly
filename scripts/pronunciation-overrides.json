@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "language": "en-GB",
   "notation": "Misaki/Kokoro English phonemes; not literal IPA",
   "words": {
@@ -13,6 +13,12 @@
       "ipa": "ɪnˈvaɪrəmənt",
       "phonemes": "ɪnvˈIɹəmənt",
       "source": "https://dictionary.cambridge.org/pronunciation/english/environment"
+    },
+    "august": {
+      "ipa": "ˈɔːɡəst",
+      "phonemes": "ˈɔːɡəst",
+      "source": "https://dictionary.cambridge.org/pronunciation/english/august",
+      "note": "Month name August, with initial stress; not the adjective august."
     }
   }
 }

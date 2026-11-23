@@ -23,3 +23,7 @@ test('all 160 P1 answers have local audio and manifest hashes match',()=>{
  const crypto=require('node:crypto');const p=require('../assets/p1-spelling.js');const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');const pack=JSON.parse(html.match(/const AUDIO_PACK=(\{[^\n]+\});/)[1]);const manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'../assets/neural-audio-manifest.json'),'utf8'));
  for(const e of p.entries){const url=pack[e.en.toLowerCase()];assert.ok(url,'missing local audio: '+e.en);const clip=manifest.clips.find(c=>c.key===e.en.toLowerCase());assert.ok(clip,e.en);assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname,'..',url))).digest('hex'),clip.sha256);}
 });
+
+test('August uses the month pronunciation with initial stress',()=>{
+ const m=JSON.parse(fs.readFileSync(path.join(__dirname,'../assets/neural-audio-manifest.json'),'utf8'));const clip=m.clips.find(c=>c.key==='august');assert.equal(clip.phonemes,'ˈɔːɡəst.');assert.ok(clip.overrides.includes('august'));
+});
